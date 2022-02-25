@@ -38,7 +38,7 @@ namespace WebApplication1.Controllers
                 var connections = db.GetReserveList(min, max);
                 foreach (Reserve c in connections)
                 {
-                    ResList.Add(c.Id + ". " + c.User.Name + " " + c.User.Surname + " reserved " + c.Room.Id + " from " + c.TimeStart + " to " + c.TimeEnd + ".");
+                    ResList.Add(c.Id + ". " + c.User.Name + " " + c.User.Surname + " reserved " + c.Room.Name + " from " + c.TimeStart + " to " + c.TimeEnd + ".");
                 }
             }
             ViewBag.Res = ResList;

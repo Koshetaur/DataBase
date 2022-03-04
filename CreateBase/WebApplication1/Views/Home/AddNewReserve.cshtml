@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Reserve List";
+}
+
+<div class="text-center">
+    <h1 class="display-4">RoomList<br></h1>
+</div>
+<div class="text-left">
+    <h1 class="display-4">
+        <font size="4">
+            @foreach (string reserve in ViewBag.Resall)
+            {
+                <p>@reserve</p>
+            }
+        </font>
+    </h1>
+</div>

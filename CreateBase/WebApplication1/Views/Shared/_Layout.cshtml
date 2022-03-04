@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 @{
-    ViewData["Title"] = "Our Web App";
+    ViewData["Title"] = "Room Reserving";
 }
 <head>
     <meta charset="utf-8" />
@@ -25,7 +25,7 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="AddNew">Add New</a>
                         </li>
                     </ul>
                 </div>
@@ -40,7 +40,7 @@
 
     <footer class="footer bg-dark text-muted">
         <div class="container">
-            &copy; 2022 - @ViewData["Title"] - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2022 - @ViewData["Title"] - <a asp-area="" asp-controller="Home" asp-action="AddNew">Add New</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

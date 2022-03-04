@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Add New Room";
+}
+<div class="text-right">
+    <h1>@ViewData["Title"]</h1>
+</div>
+<div class="text-center">
+    <form method="post" action="/Home/AddNewRoom">
+        <p>
+            <label>Room Name</label><br />
+            <input type="text" name="roomname" />
+        </p>
+        <p>
+            <input type="submit" value="Add New Room" />
+        </p>
+    </form>
+</div>

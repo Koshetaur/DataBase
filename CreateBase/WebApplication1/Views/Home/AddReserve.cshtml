@@ -8,20 +8,20 @@
     <form method="post" action="/Home/AddNewReserve">
         <p>
             <label>User</label><br />
-            <input type="text" name="userlist" list="users">
+            <input name="userlist" list="users">
             <datalist id="users">
-                @foreach (string u in ViewBag.Usr)
+                @foreach (var u in ViewBag.Usr)
                 {
-                    <option>@u</option>
+                    <option>@u.Name @u.Surname</option>
                 }
             </datalist>
         </p>
         <p>
             <label>Room</label><br />
             <select name="roomlist">
-                @foreach (string r in ViewBag.Rms)
+                @foreach (var r in ViewBag.Rms)
                 {
-                    <option>@r</option>
+                    <option>@r.Name</option>
                 }
             </select>
         </p>

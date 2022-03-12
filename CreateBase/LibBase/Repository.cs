@@ -11,7 +11,7 @@ namespace LibBase
         /// Возвращает список всех пользователей в базе данных в формате List
         /// </summary>
         /// <returns></returns>
-        List<User> GetRoomsList();
+        List<User> GetUserList();
         /// <summary>
         /// Возвращает список всех комнат в базе данных в формате List
         /// </summary>
@@ -80,7 +80,7 @@ namespace LibBase
             db = new ApplicationContext(opt);
         }
 
-        public List<User> GetRoomsList()
+        public List<User> GetUserList()
         {
             return db.Users.ToList();
         }

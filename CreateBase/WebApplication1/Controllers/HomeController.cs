@@ -79,10 +79,8 @@ namespace WebApplication1.Controllers
         {
             using (Repository db = new Repository())
             {
-                var usrs = db.GetRoomsList();
-                var rms = db.GetRoomList();
-                ViewBag.Usr = usrs;
-                ViewBag.Rms = rms;
+                ViewBag.Usr = db.GetUserList();
+                ViewBag.Rms = db.GetRoomList();
             }
             return View();
         }

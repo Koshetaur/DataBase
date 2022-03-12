@@ -86,12 +86,31 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddNewReserve(User userlist, Room roomlist, DateTime starttime, DateTime endtime)
+        public IActionResult AddNewReserve(string userlist, string roomlist, DateTime starttime, DateTime endtime)
         {
             using (Repository db = new Repository())
             {
-                db.CreateReserve(userlist.Id, roomlist.Id, starttime, endtime);
-                db.Save();
+                var users = db.GetUserList();
+                var rooms = db.GetRoomList();
+                int UserId = 0, RoomId = 0;
+                foreach(User u in users)
+                {
+                    if(u.Name + " " + u.Surname == userlist)
+                    {
+                        UserId = u.Id;
+                    }
+                }
+                foreach (Room r in rooms)
+                {
+                    if (r.Name == roomlist)
+                    {
+                        RoomId = r.Id;
+                    }
+                }
+                if(RoomId!=0 && UserId != 0) {
+                    db.CreateReserve(UserId, RoomId, starttime, endtime);
+                    db.Save();
+                }
             }
             return Redirect("~/Home/Index");
         }

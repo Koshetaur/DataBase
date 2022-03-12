@@ -5,7 +5,7 @@
             <form method="post" action="/Home/AddNewReserve">
                 <p>
                     <label>User</label><br />
-                    <input name="userlist" list="users" required />
+                    <input type="text" name="userlist" list="users" required />
                     <datalist id="users">
                         @foreach (var u in ViewBag.Usr)
                         {
@@ -15,7 +15,7 @@
                 </p>
                 <p>
                     <label>Room</label><br />
-                    <select name="roomlist">
+                    <select typeof="text" name="roomlist">
                         @foreach (var r in ViewBag.Rms)
                         {
                             <option>@r.Name</option>

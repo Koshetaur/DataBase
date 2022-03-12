@@ -27,8 +27,7 @@ namespace WebApplication1.Controllers
                 var connections = db.GetReserveList(min, max);
                 foreach (Reserve c in connections)
                 {
-                    ResList.Add(c.Id + ". " 
-                        + c.User.Name + " " + c.User.Surname + " reserved " + c.Room.Name + " from " + c.TimeStart + " to " + c.TimeEnd + ".");
+                    ResList.Add(c.Id + ". "  + c.User.Name + " " + c.User.Surname + " reserved " + c.Room.Name + " from " + c.TimeStart + " to " + c.TimeEnd + ".");
                 }
             }
             ViewBag.Res = ResList;
@@ -81,15 +80,7 @@ namespace WebApplication1.Controllers
             using (Repository db = new Repository())
             {
                 var usrs = db.GetRoomsList();
-                /*foreach (User u in usrs)
-                {
-                    UsrList.Add(u.Id + ". " + u.Name + " " + u.Surname);
-                }*/
                 var rms = db.GetRoomList();
-                /*foreach (Room r in rms)
-                {
-                    RmsList.Add(r.Id + ". " + r.Name);
-                }*/
                 ViewBag.Usr = usrs;
                 ViewBag.Rms = rms;
             }
@@ -101,8 +92,8 @@ namespace WebApplication1.Controllers
         {
             using (Repository db = new Repository())
             {
-                //db.CreateReserve(userlist.Id, roomlist.Id, starttime, endtime);
-                //db.Save();
+                db.CreateReserve(userlist.Id, roomlist.Id, starttime, endtime);
+                db.Save();
             }
             return Redirect("~/Home/Index");
         }

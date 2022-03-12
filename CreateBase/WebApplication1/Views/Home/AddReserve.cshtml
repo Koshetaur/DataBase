@@ -1,40 +1,40 @@
 ﻿@{
     ViewData["Title"] = "Add New Reserve";
 }
-<div class="text-right">
-    <h1>@ViewData["Title"]</h1>
-</div>
-<div class="text-center">
-    <form method="post" action="/Home/AddNewReserve">
-        <p>
-            <label>User</label><br />
-            <input name="userlist" list="users">
-            <datalist id="users">
-                @foreach (var u in ViewBag.Usr)
-                {
-                    <option>@u.Name @u.Surname</option>
-                }
-            </datalist>
-        </p>
-        <p>
-            <label>Room</label><br />
-            <select name="roomlist">
-                @foreach (var r in ViewBag.Rms)
-                {
-                    <option>@r.Name</option>
-                }
-            </select>
-        </p>
-        <p>
-            <label>Start Time</label><br />
-            <input type="datetime-local" name="starttime" />
-        </p>
-        <p>
-            <label>End Time</label><br />
-            <input type="datetime-local" name="endtime" />
-        </p>
-        <p>
-            <input type="submit" value="Add New Reserve" />
-        </p>
-    </form>
-</div>
+        <div class="text-right">
+            <h1>@ViewData["Title"]</h1>
+        </div>
+        <div class="text-center">
+            <form method="post" action="/Home/AddNewReserve">
+                <p>
+                    <label>User</label><br />
+                    <input name="userlist" list="users" required />
+                    <datalist id="users">
+                        @foreach (var u in ViewBag.Usr)
+                        {
+                            <option>@u.Name @u.Surname</option>
+                        }
+                    </datalist>
+                </p>
+                <p>
+                    <label>Room</label><br />
+                    <select name="roomlist">
+                        @foreach (var r in ViewBag.Rms)
+                        {
+                            <option>@r.Name</option>
+                        }
+                    </select>
+                </p>
+                <p>
+                    <label>Start Time</label><br />
+                    <input type="datetime-local" name="starttime" required />
+                </p>
+                <p>
+                    <label>End Time</label><br />
+                    <input type="datetime-local" name="endtime" required />
+                </p>
+                <p>
+                    <input type="submit" value="Add New Reserve" />
+                </p>
+            </form>
+        </div>

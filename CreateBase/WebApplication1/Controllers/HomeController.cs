@@ -1,8 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 using WebApplication1.Models;
 using LibBase;
 
@@ -48,12 +54,19 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public IActionResult AddNewUser(string username, string usersurname)
         {
+            var UsrList = new List<string>();
             using (Repository db = new Repository())
             {
                 db.CreateUser(username, usersurname);
                 db.Save();
+                var usrs = db.GetRoomsList();
+                foreach (User u in usrs)
+                {
+                    UsrList.Add(u.Id + ". " + u.Name + " " + u.Surname + ".");
+                }
             }
-            return Redirect("~/Home/Added");
+            ViewBag.Usr = UsrList;
+            return View();
         }
 
         public IActionResult AddRoom()
@@ -64,47 +77,63 @@ namespace WebApplication1.Controllers
         [HttpPost]
         public IActionResult AddNewRoom(string roomname)
         {
+            var RmsList = new List<string>();
             using (Repository db = new Repository())
             {
                 db.CreateRoom(roomname);
                 db.Save();
+                var rms = db.GetRoomList();
+                foreach (Room r in rms)
+                {
+                    RmsList.Add(r.Id + ". " + r.Name + " " + ".");
+                }
             }
-            return Redirect("~/Home/Added");
-        }
-
-        public IActionResult Added()
-        {
+            ViewBag.Rms = RmsList;
             return View();
         }
+
         public IActionResult AddReserve()
         {
+            var UsrList = new List<string>();
+            var RmsList = new List<string>();
             using (Repository db = new Repository())
             {
                 var usrs = db.GetRoomsList();
-                /*foreach (User u in usrs)
+                foreach (User u in usrs)
                 {
                     UsrList.Add(u.Id + ". " + u.Name + " " + u.Surname);
-                }*/
+                }
                 var rms = db.GetRoomList();
-                /*foreach (Room r in rms)
+                foreach (Room r in rms)
                 {
                     RmsList.Add(r.Id + ". " + r.Name);
-                }*/
-                ViewBag.Usr = usrs;
-                ViewBag.Rms = rms;
+                }
             }
+            ViewBag.Usr = UsrList;
+            ViewBag.Rms = RmsList;
             return View();
         }
 
         [HttpPost]
-        public IActionResult AddNewReserve(User userlist, Room roomlist, DateTime starttime, DateTime endtime)
+        public IActionResult AddNewReserve(string userlist, string roomlist, DateTime starttime, DateTime endtime)
         {
+            var ResList = new List<string>();
             using (Repository db = new Repository())
             {
-                //db.CreateReserve(userlist.Id, roomlist.Id, starttime, endtime);
-                //db.Save();
+                string userid = userlist.Remove(userlist.IndexOf('.'), userlist.Length - userlist.IndexOf('.'));
+                string roomid = roomlist.Remove(roomlist.IndexOf('.'), roomlist.Length - roomlist.IndexOf('.'));
+                db.CreateReserve(Int32.Parse(userid), Int32.Parse(roomid), starttime, endtime);
+                db.Save();
+                var min = new DateTime(2021, 02, 12, 00, 00, 00);
+                var max = new DateTime(2023, 02, 12, 00, 00, 00);
+                var connections = db.GetReserveList(min, max);
+                foreach (Reserve c in connections)
+                {
+                    ResList.Add(c.Id + ". " + c.User.Name + " " + c.User.Surname + " reserved " + c.Room.Name + " from " + c.TimeStart + " to " + c.TimeEnd + ".");
+                }
             }
-            return Redirect("~/Home/Index");
+            ViewBag.Resall = ResList;
+            return View();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

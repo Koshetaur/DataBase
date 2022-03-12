@@ -1,0 +1,17 @@
+﻿@{
+    ViewData["Title"] = "Users";
+}
+
+<div class="text-center">
+    <h1 class="display-4">UserList<br></h1>
+</div>
+<div class="text-left">
+    <h1 class="display-4">
+        <font size="4">
+            @foreach (string user in ViewBag.Usr)
+            {
+                <p>@user</p>
+            }
+        </font>
+    </h1>
+</div>

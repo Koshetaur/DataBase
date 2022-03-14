@@ -65,13 +65,26 @@ namespace WebApplication1.Controllers
         {
             using (Repository db = new Repository())
             {
-                db.CreateRoom(roomname);
-                db.Save();
+                var rooms = db.GetRoomList();
+                Room resRoom = rooms.Find(delegate (Room r) { return r.Name == roomname; });
+                if (resRoom == null)
+                {
+                    db.CreateRoom(roomname);
+                    db.Save();
+                }
+                else
+                {
+                    return View("~/Home/Error", new ErrorViewModel { Message = "Room name must be unique!", RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+                }
             }
             return Redirect("~/Home/Added");
         }
 
         public IActionResult Added()
+        {
+            return View();
+        }
+        public IActionResult RoomError()
         {
             return View();
         }
@@ -92,24 +105,16 @@ namespace WebApplication1.Controllers
             {
                 var users = db.GetUserList();
                 var rooms = db.GetRoomList();
-                int UserId = 0, RoomId = 0;
-                foreach(User u in users)
-                {
-                    if(u.Name + " " + u.Surname == userlist)
-                    {
-                        UserId = u.Id;
-                    }
-                }
-                foreach (Room r in rooms)
-                {
-                    if (r.Name == roomlist)
-                    {
-                        RoomId = r.Id;
-                    }
-                }
-                if(RoomId!=0 && UserId != 0) {
-                    db.CreateReserve(UserId, RoomId, starttime, endtime);
+                User resUser = users.Find(delegate (User u) { return u.Name + " " + u.Surname == userlist; });
+                Room resRoom = rooms.Find(delegate (Room r) { return r.Name == roomlist; });
+
+                if (resUser!=null && resRoom != null) {
+                    db.CreateReserve(resUser.Id, resRoom.Id, starttime, endtime);
                     db.Save();
+                }
+                else
+                {
+                    return View("~/Home/Error", new ErrorViewModel { Message = "No such user in database!", RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
                 }
             }
             return Redirect("~/Home/Index");

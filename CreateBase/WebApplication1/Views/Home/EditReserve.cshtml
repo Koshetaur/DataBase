@@ -1,10 +1,10 @@
 ﻿@model WebApplication1.Controllers.ReserveViewModel
 
         <div class="text-right">
-            <h1>Add Reserve</h1>
+            <h1>Edit Reserve</h1>
         </div>
 <div class="text-left">
-    <form asp-controller="Home" asp-action="AddReserve" method="post">
+    <form asp-controller="Home" asp-action="EditReserve" method="post">
         <p>
             <label asp-for="SelectedUserId"></label>
             <select asp-for="SelectedUserId" asp-items="Model.Users"></select>
@@ -22,7 +22,8 @@
             <input asp-for="EndTime" />
         </p>
         <p>
-            <button type="submit">Add Reserve</button>
+            <button type="submit">Edit Reserve</button>
         </p>
+        <input asp-for="Id"/>
     </form>
 </div>

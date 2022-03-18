@@ -1,4 +1,5 @@
-﻿@{
+﻿@model List<WebApplication1.Controllers.ReservesViewModel>
+@{
     ViewData["Title"] = "Home Page";
 }
 
@@ -6,8 +7,8 @@
     <h1>Reserves<br></h1>
 </div>
 <div class="text-left">
-    @foreach (string reserve in ViewBag.Res)
+    @foreach (var reserve in Model)
     {
-        <p>@reserve</p>
+        <a asp-controller="Home" asp-action="EditReserve" asp-route-id="@reserve.Id">@reserve.Title</a><br/>
     }
 </div>

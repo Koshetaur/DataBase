@@ -1,18 +1,21 @@
-﻿<div class="text-right">
-    <h1>Add New User</h1>
+﻿@model WebApplication1.Controllers.UserViewModel
+
+<div class="text-right">
+    <h1>Add User</h1>
 </div>
-<div class="text-center">
-    <form method="post" action="~/Home/AddNewUser">
+<div class="text-left">
+    <form asp-controller="Home" asp-action="AddUser" method="post">
         <p>
-            <label>User Name</label><br />
-            <input type="text" name="username" required />
+            <label asp-for="UserName"></label>
+            <input asp-for="UserName" />
         </p>
         <p>
-            <label>User Surame</label><br />
-            <input type="text" name="usersurname" required />
+            <label asp-for="UserSurname"></label>
+            <input asp-for="UserSurname" />
         </p>
         <p>
-            <input type="submit" value="Add New User" />
+            <button type="submit">Add User</button>
         </p>
     </form>
+    <p>@Model.Message</p>
 </div>

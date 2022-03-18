@@ -2,12 +2,86 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Linq;
 using WebApplication1.Models;
 using LibBase;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace WebApplication1.Controllers
 {
+    public class UserViewModel
+    {
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Name")]
+        public string UserName { get; set; }
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Surname")]
+        public string UserSurname { get; set; }
+        public string Message { get; set; }
+        public bool IsNoDigits()
+        {
+            foreach(char cn in this.UserName)
+            {
+                if (!Char.IsLetter(cn)) { return false; }
+            }
+            foreach (char cs in this.UserSurname)
+            {
+                if (!Char.IsLetter(cs)) { return false; }
+            }
+            return true;
+        }
+    }
+
+    public class RoomViewModel
+    {
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Office")]
+        public string RoomName { get; set; }
+        public string Message { get; set; }
+        public bool IsUnique()
+        {
+            using (Repository db = new Repository())
+            {
+                var roomlist = db.GetRoomList();
+                if (roomlist.Exists(x => x.Name == this.RoomName))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    public class ReserveViewModel
+    {
+        [Display(Name = "Employee")]
+        public int SelectedUserId { get; set; }
+        public SelectList Users { get; set; }
+
+        [Display(Name = "Office")]
+        public int SelectedRoomId { get; set; }
+        public SelectList Rooms { get; set; }
+
+        [Display(Name = "Start Time")]
+        public DateTime StartTime { get; set; }
+        [Display(Name = "End Time")]
+        public DateTime EndTime { get; set; }
+
+        [HiddenInput]
+        public int Id { get; set; }
+    }
+
+    public class ReservesViewModel
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+    }
+
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
@@ -19,19 +93,20 @@ namespace WebApplication1.Controllers
 
         public IActionResult Index()
         {
-            var ResList = new List<string>();
-            using (Repository db = new Repository())
+            List<ReservesViewModel> result;
+
+            using (var db = new Repository())
             {
-                DateTime min = DateTime.Today;
-                DateTime max = min.AddDays(7);
-                var connections = db.GetReserveList(min, max);
-                foreach (Reserve c in connections)
+                var min = DateTime.Today;
+                var max = min.AddDays(7);
+                result = db.GetReserveList(min, max).Select(x => new ReservesViewModel
                 {
-                    ResList.Add(c.Id + ". "  + c.User.Name + " " + c.User.Surname + " reserved " + c.Room.Name + " from " + c.TimeStart + " to " + c.TimeEnd + ".");
-                }
+                    Id = x.Id,
+                    Title = $"{x.User.Name} {x.User.Surname} reserved {x.Room.Name} from {x.TimeStart} to {x.TimeEnd}"
+                }).ToList();
             }
-            ViewBag.Res = ResList;
-            return View();
+
+            return View(result);
         }
 
         public IActionResult AddNew()
@@ -41,89 +116,145 @@ namespace WebApplication1.Controllers
 
         public IActionResult AddUser()
         {
-            return View();
+            return View(GetUserViewModel());
         }
 
         [HttpPost]
-        public IActionResult AddNewUser(string username, string usersurname)
+        [ValidateAntiForgeryToken]
+        public IActionResult AddUser([Bind("UserName,UserSurname")] UserViewModel model)
         {
-            using (Repository db = new Repository())
+            if (ModelState.IsValid && model.IsNoDigits())
             {
-                db.CreateUser(username, usersurname);
-                db.Save();
+                using (Repository db = new Repository())
+                {
+                    db.CreateUser(model.UserName, model.UserSurname);
+                    db.Save();
+                }
+                return View(new UserViewModel { UserName = null, UserSurname = null, Message = "Added successfully." });
             }
-            return Redirect("~/Home/Added");
+            return View(new UserViewModel { Message = "Please enter employee name and surname containing only letters." });
         }
 
         public IActionResult AddRoom()
         {
-            return View();
+            return View(GetRoomViewModel());
         }
 
         [HttpPost]
-        public IActionResult AddNewRoom(string roomname)
+        [ValidateAntiForgeryToken]
+        public IActionResult AddRoom([Bind("RoomName")] RoomViewModel model)
         {
-            using (Repository db = new Repository())
+            if (ModelState.IsValid && model.IsUnique())
             {
-                var rooms = db.GetRoomList();
-                Room resRoom = rooms.Find(delegate (Room r) { return r.Name == roomname; });
-                if (resRoom == null)
+                using (Repository db = new Repository())
                 {
-                    db.CreateRoom(roomname);
+                    db.CreateRoom(model.RoomName);
                     db.Save();
                 }
-                else
-                {
-                    return View("~/Home/Error", new ErrorViewModel { Message = "Room name must be unique!", RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-                }
+                return View(new RoomViewModel { RoomName = null, Message = "Added succesfully." });
             }
-            return Redirect("~/Home/Added");
+            return View(new RoomViewModel { Message = "Please enter unique office name." });
         }
 
-        public IActionResult Added()
-        {
-            return View();
-        }
-        public IActionResult RoomError()
-        {
-            return View();
-        }
+        [HttpGet]
         public IActionResult AddReserve()
         {
-            using (Repository db = new Repository())
-            {
-                ViewBag.Usr = db.GetUserList();
-                ViewBag.Rms = db.GetRoomList();
-            }
-            return View();
+            return View(GetReserveViewModel());
         }
 
         [HttpPost]
-        public IActionResult AddNewReserve(string userlist, string roomlist, DateTime starttime, DateTime endtime)
+        [ValidateAntiForgeryToken]
+        public IActionResult AddReserve([Bind("SelectedUserId,SelectedRoomId,StartTime,EndTime")] ReserveViewModel model)
         {
-            using (Repository db = new Repository())
+            if (ModelState.IsValid)
             {
-                var users = db.GetUserList();
-                var rooms = db.GetRoomList();
-                User resUser = users.Find(delegate (User u) { return u.Name + " " + u.Surname == userlist; });
-                Room resRoom = rooms.Find(delegate (Room r) { return r.Name == roomlist; });
-
-                if (resUser!=null && resRoom != null) {
-                    db.CreateReserve(resUser.Id, resRoom.Id, starttime, endtime);
+                using (var db = new Repository())
+                {
+                    db.CreateReserve(model.SelectedUserId, model.SelectedRoomId, model.StartTime, model.EndTime);
                     db.Save();
                 }
-                else
-                {
-                    return View("~/Home/Error", new ErrorViewModel { Message = "No such user in database!", RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-                }
+                return Redirect("~/Home/Index");
             }
-            return Redirect("~/Home/Index");
+
+            return View(GetReserveViewModel());
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult EditReserve(int id)
+        {
+            return View(GetReserveViewModel(id));
+        }
+
+        [HttpPost("{id}")]
+        [ValidateAntiForgeryToken]
+        public IActionResult EditReserve(int id, [Bind("SelectedUserId,SelectedRoomId,StartTime,EndTime")] ReserveViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                using (var db = new Repository())
+                {
+                    var row = db.GetReserve(id);
+                    if (row != null)
+                    {
+                        row.UserId = model.SelectedUserId;
+                        row.RoomId = model.SelectedRoomId;
+                        row.TimeStart = model.StartTime;
+                        row.TimeEnd = model.EndTime;
+                        db.Save();
+                    }
+                }
+
+                return Redirect("~/Home/Index");
+            }
+
+            return View(GetReserveViewModel(id));
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        private static ReserveViewModel GetReserveViewModel(int? id = null)
+        {
+            var model = new ReserveViewModel();
+
+            using var db = new Repository();
+            var row = id.HasValue ? db.GetReserve(id.Value) : null;
+
+            var users = db.GetUserList().Select(x => new { x.Id, Name = $"{x.Surname} {x.Name}" }).OrderBy(x => x.Name).ToList();
+            model.SelectedUserId = row?.UserId ?? users.Select(x => x.Id).FirstOrDefault();
+            model.Users = new SelectList(users, "Id", "Name");
+
+            var rooms = db.GetRoomList().OrderBy(x => x.Name).ToList();
+            model.SelectedRoomId = row?.RoomId ?? rooms.Select(x => x.Id).FirstOrDefault();
+            model.Rooms = new SelectList(rooms, "Id", "Name");
+
+            var now = DateTime.Now;
+            model.StartTime = row?.TimeStart ?? RoundUp(now, TimeSpan.FromMinutes(1));
+            model.EndTime = row?.TimeEnd ?? model.StartTime.AddHours(1);
+
+            return model;
+        }
+
+        private static RoomViewModel GetRoomViewModel()
+        {
+            var model = new RoomViewModel();
+            model.Message = " ";
+            return model;
+        }
+
+        private static UserViewModel GetUserViewModel()
+        {
+            var model = new UserViewModel();
+            model.Message = " ";
+            return model;
+        }
+
+        private static DateTime RoundUp(DateTime dt, TimeSpan d)
+        {
+            return new DateTime((dt.Ticks + d.Ticks - 1) / d.Ticks * d.Ticks, dt.Kind);
         }
     }
 }

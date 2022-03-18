@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -35,6 +36,13 @@ namespace WebApplication1
             }
             else
             {
+                app.UseStatusCodePages(async context =>
+                {
+                    context.HttpContext.Response.ContentType = "text/plain";
+                    await context.HttpContext.Response.WriteAsync(
+                            "Something went wrong... \nStatus code: " +
+                            context.HttpContext.Response.StatusCode);
+                });
                 app.UseExceptionHandler("/Home/Error");
             }
             app.UseStaticFiles();

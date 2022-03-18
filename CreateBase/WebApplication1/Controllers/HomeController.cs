@@ -11,6 +11,52 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace WebApplication1.Controllers
 {
+    public class UserViewModel
+    {
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Name")]
+        public string UserName { get; set; }
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Surname")]
+        public string UserSurname { get; set; }
+        public string Message { get; set; }
+        public bool IsNoDigits()
+        {
+            foreach(char cn in this.UserName)
+            {
+                if (!Char.IsLetter(cn)) { return false; }
+            }
+            foreach (char cs in this.UserSurname)
+            {
+                if (!Char.IsLetter(cs)) { return false; }
+            }
+            return true;
+        }
+    }
+
+    public class RoomViewModel
+    {
+        [Required]
+        [DataType(DataType.Text)]
+        [Display(Name = "Office")]
+        public string RoomName { get; set; }
+        public string Message { get; set; }
+        public bool IsUnique()
+        {
+            using (Repository db = new Repository())
+            {
+                var roomlist = db.GetRoomList();
+                if (roomlist.Exists(x => x.Name == this.RoomName))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
     public class ReserveViewModel
     {
         [Display(Name = "Employee")]
@@ -70,39 +116,44 @@ namespace WebApplication1.Controllers
 
         public IActionResult AddUser()
         {
-            return View();
+            return View(GetUserViewModel());
         }
 
         [HttpPost]
-        public IActionResult AddNewUser(string username, string usersurname)
+        [ValidateAntiForgeryToken]
+        public IActionResult AddUser([Bind("UserName,UserSurname")] UserViewModel model)
         {
-            using (Repository db = new Repository())
+            if (ModelState.IsValid && model.IsNoDigits())
             {
-                db.CreateUser(username, usersurname);
-                db.Save();
+                using (Repository db = new Repository())
+                {
+                    db.CreateUser(model.UserName, model.UserSurname);
+                    db.Save();
+                }
+                return View(new UserViewModel { UserName = null, UserSurname = null, Message = "Added successfully." });
             }
-            return Redirect("~/Home/Added");
+            return View(new UserViewModel { Message = "Please enter employee name and surname containing only letters." });
         }
 
         public IActionResult AddRoom()
         {
-            return View();
+            return View(GetRoomViewModel());
         }
 
         [HttpPost]
-        public IActionResult AddNewRoom(string roomname)
+        [ValidateAntiForgeryToken]
+        public IActionResult AddRoom([Bind("RoomName")] RoomViewModel model)
         {
-            using (Repository db = new Repository())
+            if (ModelState.IsValid && model.IsUnique())
             {
-                db.CreateRoom(roomname);
-                db.Save();
+                using (Repository db = new Repository())
+                {
+                    db.CreateRoom(model.RoomName);
+                    db.Save();
+                }
+                return View(new RoomViewModel { RoomName = null, Message = "Added succesfully." });
             }
-            return Redirect("~/Home/Added");
-        }
-
-        public IActionResult Added()
-        {
-            return View();
+            return View(new RoomViewModel { Message = "Please enter unique office name." });
         }
 
         [HttpGet]
@@ -122,7 +173,6 @@ namespace WebApplication1.Controllers
                     db.CreateReserve(model.SelectedUserId, model.SelectedRoomId, model.StartTime, model.EndTime);
                     db.Save();
                 }
-
                 return Redirect("~/Home/Index");
             }
 
@@ -185,6 +235,20 @@ namespace WebApplication1.Controllers
             model.StartTime = row?.TimeStart ?? RoundUp(now, TimeSpan.FromMinutes(1));
             model.EndTime = row?.TimeEnd ?? model.StartTime.AddHours(1);
 
+            return model;
+        }
+
+        private static RoomViewModel GetRoomViewModel()
+        {
+            var model = new RoomViewModel();
+            model.Message = " ";
+            return model;
+        }
+
+        private static UserViewModel GetUserViewModel()
+        {
+            var model = new UserViewModel();
+            model.Message = " ";
             return model;
         }
 

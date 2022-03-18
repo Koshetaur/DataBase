@@ -1,6 +1,4 @@
-using System;
-
-namespace WebApplication1.Models
+namespace ReserveWebApp.Models
 {
     public class ErrorViewModel
     {

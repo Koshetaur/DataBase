@@ -131,6 +131,11 @@ namespace LibBase
             db.Reservs.Add(res);
         }
 
+        public bool IsRoomUnique(string room)
+        {
+            return !db.Rooms.Any(x => x.Name == room);
+        }
+
         public void Save()
         {
             db.SaveChanges();

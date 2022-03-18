@@ -1,21 +1,30 @@
-﻿@model WebApplication1.Controllers.UserViewModel
+﻿@model ReserveWebApp.Models.UserViewModel
 
 <div class="text-right">
     <h1>Add User</h1>
 </div>
-<div class="text-left">
-    <form asp-controller="Home" asp-action="AddUser" method="post">
-        <p>
-            <label asp-for="UserName"></label>
-            <input asp-for="UserName" />
-        </p>
-        <p>
-            <label asp-for="UserSurname"></label>
-            <input asp-for="UserSurname" />
-        </p>
-        <p>
-            <button type="submit">Add User</button>
-        </p>
-    </form>
-    <p>@Model.Message</p>
+<div class="row">
+    <div class="col-md-4">
+        <form asp-controller="Home" asp-action="AddUser" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="UserName"></label>
+                <input asp-for="UserName" class="form-control" />
+                <span asp-validation-for="UserName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="UserSurname"></label>
+                <input asp-for="UserSurname" class="form-control" />
+                <span asp-validation-for="UserSurname" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Add User</button>
+            </div>
+        </form>
+    </div>
 </div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

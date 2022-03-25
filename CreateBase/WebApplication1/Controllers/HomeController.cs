@@ -57,8 +57,11 @@ namespace ReserveWebApp.Controllers
                 .Select(x => new ReservesViewModel
                 {
                     Id = x.Id,
-                    Title =
-                        $"{x.User.Name} {x.User.Surname} reserved {x.Room.Name} from {x.TimeStart} to {x.TimeEnd}"
+                    User =
+                        $"{x.User.Name} {x.User.Surname}",
+                    Room = x.Room.Name,
+                    TimeStart = $"{x.TimeStart}",
+                    TimeEnd = $"{x.TimeEnd}"
                 })
                 .ToList();
 
@@ -146,6 +149,14 @@ namespace ReserveWebApp.Controllers
                 db.Save();
             }
 
+            return RedirectToAction(nameof(Index));
+        }
+
+        public IActionResult DeleteReserve(int id)
+        {
+            var db = _repository;
+            db.DeleteReserve(id);
+            db.Save();
             return RedirectToAction(nameof(Index));
         }
 

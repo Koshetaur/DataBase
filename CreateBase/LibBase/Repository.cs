@@ -62,6 +62,21 @@ namespace LibBase
         /// <param name="TimeEn">Время окончания резерва</param>
         void CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn);
         /// <summary>
+        /// Удаляет из базы пользователя
+        /// </summary>
+        /// <param name="id">Id нужного пользователя</param>
+        void DeleteUser(int id);
+        /// <summary>
+        /// Удаляет из базы комнату
+        /// </summary>
+        /// <param name="id">Id нужной комнаты</param>
+        void DeleteRoom(int id);
+        /// <summary>
+        /// Удаляет из базы резерв
+        /// </summary>
+        /// <param name="id">Id нужного резерва</param>
+        void DeleteReserve(int id);
+        /// <summary>
         /// Проверяет уникальность имени добавляемой комнаты
         /// </summary>
         /// <param name="room">Название комнаты</param>
@@ -135,6 +150,24 @@ namespace LibBase
             Room room = GetRoom(IdRoom);
             Reserve res = new Reserve { User = user, Room = room, TimeStart = TimeSt, TimeEnd = TimeEn };
             db.Reservs.Add(res);
+        }
+
+        public void DeleteUser(int id)
+        {
+            User user = GetUser(id);
+            db.Users.Remove(user);
+        }
+
+        public void DeleteRoom(int id)
+        {
+            Room room = GetRoom(id);
+            db.Rooms.Remove(room);
+        }
+
+        public void DeleteReserve(int id)
+        {
+            Reserve reserve = GetReserve(id);
+            db.Reservs.Remove(reserve);
         }
 
         public bool IsRoomUnique(string room)

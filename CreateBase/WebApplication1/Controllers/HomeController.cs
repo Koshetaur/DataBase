@@ -13,11 +13,12 @@ namespace ReserveWebApp.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
 
-        public HomeController(ILogger<HomeController> logger)
+        private readonly IRepository _repository;
+
+        public HomeController(IRepository repository)
         {
-            _logger = logger;
+            _repository = repository;
         }
 
         #region Validators
@@ -26,8 +27,8 @@ namespace ReserveWebApp.Controllers
         public IActionResult VerifyRoomName(string roomName)
         {
             bool result;
-            using (var db = new Repository())
-                result = db.IsRoomUnique(roomName);
+            var db = _repository;
+            result = db.IsRoomUnique(roomName);
             return Json(result);
         }
 
@@ -45,29 +46,22 @@ namespace ReserveWebApp.Controllers
 
         #endregion
 
-        public IActionResult AddNew()
-        {
-            return View();
-        }
 
         public IActionResult Index()
         {
             List<ReservesViewModel> result;
-
-            using (var db = new Repository())
-            {
-                var min = DateTime.Today;
-                var max = min.AddDays(7);
-                result = db.GetReserveList(min, max)
-                    .OrderBy(x => x.TimeStart)
-                    .Select(x => new ReservesViewModel
-                    {
-                        Id = x.Id,
-                        Title =
-                            $"{x.User.Name} {x.User.Surname} reserved {x.Room.Name} from {x.TimeStart} to {x.TimeEnd}"
-                    })
-                    .ToList();
-            }
+            var min = DateTime.Today;
+            var max = min.AddDays(7);
+            var db = _repository;
+            result = db.GetReserveList(min, max)
+                .OrderBy(x => x.TimeStart)
+                .Select(x => new ReservesViewModel
+                {
+                    Id = x.Id,
+                    Title =
+                        $"{x.User.Name} {x.User.Surname} reserved {x.Room.Name} from {x.TimeStart} to {x.TimeEnd}"
+                })
+                .ToList();
 
             return View(result);
         }
@@ -84,11 +78,9 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(new UserViewModel());
 
-            using (Repository db = new Repository())
-            {
-                db.CreateUser(model.UserName, model.UserSurname);
-                db.Save();
-            }
+            var db = _repository;
+            db.CreateUser(model.UserName, model.UserSurname);
+            db.Save();
             return RedirectToAction(nameof(Index));
         }
 
@@ -104,11 +96,9 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(new RoomViewModel());
 
-            using (Repository db = new Repository())
-            {
-                db.CreateRoom(model.RoomName);
-                db.Save();
-            }
+            var db = _repository;
+            db.CreateRoom(model.RoomName);
+            db.Save();
 
             return RedirectToAction(nameof(Index));
         }
@@ -126,11 +116,9 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel());
 
-            using (var db = new Repository())
-            {
-                db.CreateReserve(model.SelectedUserId, model.SelectedRoomId, model.StartTime, model.EndTime);
-                db.Save();
-            }
+            var db = _repository;
+            db.CreateReserve(model.SelectedUserId, model.SelectedRoomId, model.StartTime, model.EndTime);
+            db.Save();
 
             return RedirectToAction(nameof(Index));
         }
@@ -148,17 +136,15 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel(id));
 
-            using (var db = new Repository())
+            var db = _repository;
+            var row = db.GetReserve(id);
+            if (row != null)
             {
-                var row = db.GetReserve(id);
-                if (row != null)
-                {
-                    row.UserId = model.SelectedUserId;
-                    row.RoomId = model.SelectedRoomId;
-                    row.TimeStart = model.StartTime;
-                    row.TimeEnd = model.EndTime;
-                    db.Save();
-                }
+                row.UserId = model.SelectedUserId;
+                row.RoomId = model.SelectedRoomId;
+                row.TimeStart = model.StartTime;
+                row.TimeEnd = model.EndTime;
+                db.Save();
             }
 
             return RedirectToAction(nameof(Index));
@@ -174,6 +160,7 @@ namespace ReserveWebApp.Controllers
         {
             var model = new ReserveViewModel();
 
+            //var db = _repository;
             using var db = new Repository();
             var row = id.HasValue ? db.GetReserve(id.Value) : null;
 

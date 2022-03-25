@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace LibBase
 {
-    interface IRepository : IDisposable
+    public interface IRepository : IDisposable
     {
         /// <summary>
         /// Возвращает список всех пользователей в базе данных в формате List
@@ -60,7 +60,13 @@ namespace LibBase
         /// <param name="IdRoom">Id Резервируемой комнаты</param>
         /// <param name="TimeSt">Время начала резерва</param>
         /// <param name="TimeEn">Время окончания резерва</param>
-        void CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn); //добавить резерв
+        void CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn);
+        /// <summary>
+        /// Проверяет уникальность имени добавляемой комнаты
+        /// </summary>
+        /// <param name="room">Название комнаты</param>
+        /// <returns></returns>
+        bool IsRoomUnique(string room);
         /// <summary>
         /// Сохраняет изменения в базе данных
         /// </summary>

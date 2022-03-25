@@ -6,7 +6,6 @@ using System.Linq;
 using LibBase;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.Extensions.Logging;
 using ReserveWebApp.Models;
 
 namespace ReserveWebApp.Controllers
@@ -160,8 +159,8 @@ namespace ReserveWebApp.Controllers
         {
             var model = new ReserveViewModel();
 
-            //var db = _repository;
-            using var db = new Repository();
+            var cl = new HomeController(new Repository());
+            var db = cl._repository;
             var row = id.HasValue ? db.GetReserve(id.Value) : null;
 
             var users = db.GetUserList().Select(x => new { x.Id, Name = $"{x.Surname} {x.Name}" }).OrderBy(x => x.Name).ToList();

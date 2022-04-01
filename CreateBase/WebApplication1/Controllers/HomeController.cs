@@ -13,11 +13,11 @@ namespace ReserveWebApp.Controllers
     public class HomeController : Controller
     {
 
-        private readonly IRepository _repository;
+        private readonly UnitOfWork _unitOfWork;
 
-        public HomeController(IRepository repository)
+        public HomeController(UnitOfWork unitOfWork)
         {
-            _repository = repository;
+            _unitOfWork = unitOfWork;
         }
 
         #region Validators
@@ -25,14 +25,14 @@ namespace ReserveWebApp.Controllers
         [AcceptVerbs("GET", "POST")]
         public IActionResult VerifyRoomName(string roomName)
         {
-            var result = _repository.IsRoomUnique(roomName);
+            var result = _unitOfWork.IsRoomUnique(roomName);
             return Json(result);
         }
 
         [AcceptVerbs("GET", "POST")]
         public IActionResult VerifyReserve(int SelectedRoomId, DateTime StartTime, DateTime EndTime, int Id)
         {
-            var result = _repository.IsReserveCorrect(SelectedRoomId, StartTime, EndTime, Id);
+            var result = _unitOfWork.IsReserveCorrect(SelectedRoomId, StartTime, EndTime, Id);
             return Json(result);
         }
 
@@ -55,7 +55,7 @@ namespace ReserveWebApp.Controllers
         {
             var min = DateTime.Today;
             var max = min.AddDays(7);
-            var result = _repository.GetReserveList(min, max)
+            var result = _unitOfWork.Reserves.GetList(min, max)
                 .OrderBy(x => x.TimeStart)
                 .Select(x => new ReservesViewModel
                 {
@@ -82,9 +82,12 @@ namespace ReserveWebApp.Controllers
         {
             if (!ModelState.IsValid)
                 return View(new UserViewModel());
-
-            _repository.CreateUser(model.UserName, model.UserSurname);
-            _repository.Save();
+            _unitOfWork.Users.Create(new User
+            {
+                Name = model.UserName,
+                Surname = model.UserSurname
+            });
+            _unitOfWork.Save();
             return RedirectToAction(nameof(Index));
         }
 
@@ -99,9 +102,11 @@ namespace ReserveWebApp.Controllers
         {
             if (!ModelState.IsValid)
                 return View(new RoomViewModel());
-
-            _repository.CreateRoom(model.RoomName);
-            _repository.Save();
+            _unitOfWork.Rooms.Create(new Room
+            {
+                Name = model.RoomName,
+            });
+            _unitOfWork.Save();
 
             return RedirectToAction(nameof(Index));
         }
@@ -118,9 +123,14 @@ namespace ReserveWebApp.Controllers
         {
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel());
-
-            _repository.CreateReserve(model.SelectedUserId, model.SelectedRoomId, model.StartTime, model.EndTime);
-            _repository.Save();
+            _unitOfWork.Reserves.Create(new Reserve
+            {
+                User = _unitOfWork.Users.Get(model.SelectedUserId),
+                Room = _unitOfWork.Rooms.Get(model.SelectedRoomId),
+                TimeStart = model.StartTime,
+                TimeEnd = model.EndTime
+            });
+            _unitOfWork.Save();
 
             return RedirectToAction(nameof(Index));
         }
@@ -138,14 +148,14 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel(id));
 
-            var row = _repository.GetReserve(id);
+            var row = _unitOfWork.Reserves.Get(id);
             if (row != null)
             {
                 row.UserId = model.SelectedUserId;
                 row.RoomId = model.SelectedRoomId;
                 row.TimeStart = model.StartTime;
                 row.TimeEnd = model.EndTime;
-                _repository.Save();
+                _unitOfWork.Save();
             }
 
             return RedirectToAction(nameof(Index));
@@ -153,8 +163,8 @@ namespace ReserveWebApp.Controllers
 
         public IActionResult DeleteReserve(int id)
         {
-            _repository.DeleteReserve(id);
-            _repository.Save();
+            _unitOfWork.Reserves.Delete(id);
+            _unitOfWork.Save();
             return RedirectToAction(nameof(Index));
         }
 
@@ -168,9 +178,9 @@ namespace ReserveWebApp.Controllers
         {
             var model = new ReserveViewModel();
 
-            var row = id.HasValue ? _repository.GetReserve(id.Value) : null;
+            var row = id.HasValue ? _unitOfWork.Reserves.Get(id.Value) : null;
 
-            var users = _repository.GetUserList()
+            var users = _unitOfWork.Users.GetList()
                 .Select(x => new
                 {
                     x.Id, 
@@ -181,7 +191,7 @@ namespace ReserveWebApp.Controllers
             model.SelectedUserId = row?.UserId ?? users.Select(x => x.Id).FirstOrDefault();
             model.Users = new SelectList(users, "Id", "Name");
 
-            var rooms = _repository.GetRoomList().OrderBy(x => x.Name).ToList();
+            var rooms = _unitOfWork.Rooms.GetList().OrderBy(x => x.Name).ToList();
             model.SelectedRoomId = row?.RoomId ?? rooms.Select(x => x.Id).FirstOrDefault();
             model.Rooms = new SelectList(rooms, "Id", "Name");
 

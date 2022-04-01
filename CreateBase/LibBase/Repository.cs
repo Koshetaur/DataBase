@@ -5,179 +5,66 @@ using System.Linq;
 
 namespace LibBase
 {
-    public interface IRepository : IDisposable
+    public interface IRepository<T> where T : class
     {
         /// <summary>
-        /// Возвращает список всех пользователей в базе данных в формате List
+        /// Возвращает список всех объектов заданного типа в базе данных в формате List
         /// </summary>
         /// <returns></returns>
-        List<User> GetUserList();
+        IEnumerable<T> GetList();
         /// <summary>
-        /// Возвращает список всех комнат в базе данных в формате List
+        /// Возвращает объект в базе данных с заданным id
         /// </summary>
+        /// <param name="id">Id нужного объекта</param>
         /// <returns></returns>
-        List<Room> GetRoomList();
-        /// <summary>
-        /// Возвращает список резервов за указанный промежуток времени в формате List
-        /// </summary>
-        /// <param name="TimeMin">Минимальное время начала резерва</param>
-        /// <param name="TimeMax">Максимальное время начала резерва</param>
-        /// <returns></returns>
-        List<Reserve> GetReserveList(DateTime TimeMin, DateTime TimeMax);
-        /// <summary>
-        /// Возвращает объект пользователя в базе данных с заданным id
-        /// </summary>
-        /// <param name="id">Id нужного пользователя</param>
-        /// <returns></returns>
-        User GetUser(int id); 
-        /// <summary>
-        /// Возвращает объект комнаты в базе данных с заданным id
-        /// </summary>
-        /// <param name="id">Id нужной комнаты</param>
-        /// <returns></returns>
-        Room GetRoom(int id);
-        /// <summary>
-        /// Возвращает объект резерва в базе данных с заданным id
-        /// </summary>
-        /// <param name="id">Id нужного резерва</param>
-        /// <returns></returns>
-        Reserve GetReserve(int id);
+        T Get(int id);
         /// <summary>
         /// Добавляет нового пользователя в базу данных
         /// </summary>
-        /// <param name="name">Имя пользователя</param>
-        /// <param name="surname">Фамилия пользователя</param>
-        void CreateUser(string name, string surname); 
+        /// <param name="obj">объект</param>
+        void Create(T obj);
         /// <summary>
-        /// Добавляет новую комнату в базу данных
+        /// Удаляет из базы объект
         /// </summary>
-        /// <param name="name">Название комнаты</param>
-        void CreateRoom(string name); 
-        /// <summary>
-        /// Создаёт новый резерв
-        /// </summary>
-        /// <param name="IdUser">Id пользователя, резервирующего комнату</param>
-        /// <param name="IdRoom">Id Резервируемой комнаты</param>
-        /// <param name="TimeSt">Время начала резерва</param>
-        /// <param name="TimeEn">Время окончания резерва</param>
-        Reserve CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn);
-        /// <summary>
-        /// Удаляет из базы пользователя
-        /// </summary>
-        /// <param name="id">Id нужного пользователя</param>
-        void DeleteUser(int id);
-        /// <summary>
-        /// Удаляет из базы комнату
-        /// </summary>
-        /// <param name="id">Id нужной комнаты</param>
-        void DeleteRoom(int id);
-        /// <summary>
-        /// Удаляет из базы резерв
-        /// </summary>
-        /// <param name="id">Id нужного резерва</param>
-        void DeleteReserve(int id);
-        /// <summary>
-        /// Проверяет уникальность имени добавляемой комнаты
-        /// </summary>
-        /// <param name="room">Название комнаты</param>
-        /// <returns></returns>
-        bool IsRoomUnique(string room);
-        /// <summary>
-        /// Проверяет резерв на наличие противоречий по времени
-        /// </summary>
-        /// <param name="roomId">Id комнаты</param>
-        /// <param name="timeStart">Время начала резерва</param>
-        /// <param name="timeEnd">Время окончания резерва</param>
-        /// <param name="id">Id резерва</param>
-        /// <returns></returns>
-        bool IsReserveCorrect(int roomId, DateTime timeStart, DateTime timeEnd, int id);
-        /// <summary>
-        /// Сохраняет изменения в базе данных
-        /// </summary>
-        void Save();
+        /// <param name="id">Id нужного объекта</param>
+        void Delete(int id);
     }
 
-    public class Repository : IRepository
+    public class UnitOfWork : IDisposable
     {
-        private ApplicationContext db;
+        private ApplicationContext db = new ApplicationContext(new ApplicationDbContextOptions { ConnectionString = Helper.ConnectionString });
+        private UserRepository userRepository;
+        private RoomRepository roomRepository;
+        private ReserveRepository reserveRepository;
 
-        public Repository()
+        public UserRepository Users
         {
-            var opt = new ApplicationDbContextOptions
+            get
             {
-                ConnectionString = Helper.ConnectionString
-            };
-            db = new ApplicationContext(opt);
+                if (userRepository == null)
+                    userRepository = new UserRepository(db);
+                return userRepository;
+            }
         }
 
-        public List<User> GetUserList()
+        public RoomRepository Rooms
         {
-            return db.Users.ToList();
+            get
+            {
+                if (roomRepository == null)
+                    roomRepository = new RoomRepository(db);
+                return roomRepository;
+            }
         }
 
-        public List<Room> GetRoomList()
+        public ReserveRepository Reserves
         {
-            return db.Rooms.ToList();
-        }
-
-        public List<Reserve> GetReserveList(DateTime TimeMin, DateTime TimeMax)
-        {
-            var res = db.Reservs.Include(res => res.User).Include(res => res.Room).Where(res => res.TimeEnd>=TimeMin && res.TimeStart<=TimeMax).ToList();
-            return res;
-        }
-
-        public User GetUser(int id)
-        {
-            return db.Users.Find(id);
-        }
-
-        public Room GetRoom(int id)
-        {
-            return db.Rooms.Find(id);
-        }
-
-        public Reserve GetReserve(int id)
-        {
-            return db.Reservs.Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == id);
-        }
-
-        public void CreateUser(string name, string surname)
-        {
-            User user = new User { Name = name, Surname = surname };
-            db.Users.Add(user);
-        }
-
-        public void CreateRoom(string name)
-        {
-            Room room = new Room { Name = name };
-            db.Rooms.Add(room);
-        }
-
-        public Reserve CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn)
-        {
-            User user = GetUser(IdUser);
-            Room room = GetRoom(IdRoom);
-            Reserve res = new Reserve { User = user, Room = room, TimeStart = TimeSt, TimeEnd = TimeEn };
-            db.Reservs.Add(res);
-            return res;
-        }
-
-        public void DeleteUser(int id)
-        {
-            User user = GetUser(id);
-            db.Users.Remove(user);
-        }
-
-        public void DeleteRoom(int id)
-        {
-            Room room = GetRoom(id);
-            db.Rooms.Remove(room);
-        }
-
-        public void DeleteReserve(int id)
-        {
-            Reserve reserve = db.Reservs.SingleOrDefault(res => res.Id == id);
-            db.Reservs.Remove(reserve);
+            get
+            {
+                if (reserveRepository == null)
+                    reserveRepository = new ReserveRepository(db);
+                return reserveRepository;
+            }
         }
 
         public bool IsRoomUnique(string room)
@@ -187,7 +74,7 @@ namespace LibBase
 
         public bool IsReserveCorrect(int roomId, DateTime timeStart, DateTime timeEnd, int id)
         {
-            return !db.Reservs.Any(res => res.TimeEnd >= timeStart && res.TimeStart <= timeEnd && res.RoomId == roomId && res.Id!=id);
+            return !db.Reservs.Any(res => res.TimeEnd >= timeStart && res.TimeStart <= timeEnd && res.RoomId == roomId && res.Id != id);
         }
 
         public void Save()
@@ -213,6 +100,91 @@ namespace LibBase
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+    }
+
+    public class UserRepository : IRepository<User>
+    {
+        private ApplicationContext db;
+
+        public UserRepository(ApplicationContext context)
+        {
+            this.db = context;
+        }
+        public IEnumerable<User> GetList()
+        {
+            return db.Users.ToList();
+        }
+        public User Get(int id)
+        {
+            return db.Users.Find(id);
+        }
+        public void Create(User user)
+        {
+            db.Users.Add(user);
+        }
+        public void Delete(int id)
+        {
+            User user = Get(id);
+            db.Users.Remove(user);
+        }
+    }
+
+    public class RoomRepository : IRepository<Room>
+    {
+        private ApplicationContext db;
+
+        public RoomRepository(ApplicationContext context)
+        {
+            this.db = context;
+        }
+        public IEnumerable<Room> GetList()
+        {
+            return db.Rooms.ToList();
+        }
+        public Room Get(int id)
+        {
+            return db.Rooms.Find(id);
+        }
+        public void Create(Room room)
+        {
+            db.Rooms.Add(room);
+        }
+        public void Delete(int id)
+        {
+            Room room = Get(id);
+            db.Rooms.Remove(room);
+        }
+    }
+
+    public class ReserveRepository : IRepository<Reserve>
+    {
+        private ApplicationContext db;
+
+        public ReserveRepository(ApplicationContext context)
+        {
+            this.db = context;
+        }
+        public IEnumerable<Reserve> GetList()
+        {
+            return db.Reservs.Include(res => res.User).Include(res => res.Room).ToList();
+        }
+        public IEnumerable<Reserve> GetList(DateTime TimeMin, DateTime TimeMax)
+        {
+            return db.Reservs.Include(res => res.User).Include(res => res.Room).Where(res => res.TimeEnd >= TimeMin && res.TimeStart <= TimeMax).ToList();
+        }
+        public Reserve Get(int id)
+        {
+            return db.Reservs.Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == id);
+        }
+        public void Create(Reserve reserve)
+        {
+            db.Reservs.Add(reserve);
+        }
+        public void Delete(int id)
+        {
+            Reserve reserve = db.Reservs.SingleOrDefault(res => res.Id == id);
+            db.Reservs.Remove(reserve);
         }
     }
 }

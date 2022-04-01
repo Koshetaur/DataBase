@@ -25,9 +25,7 @@ namespace ReserveWebApp.Controllers
         [AcceptVerbs("GET", "POST")]
         public IActionResult VerifyRoomName(string roomName)
         {
-            bool result;
-            var db = _repository;
-            result = db.IsRoomUnique(roomName);
+            var result = _repository.IsRoomUnique(roomName);
             return Json(result);
         }
 
@@ -48,11 +46,9 @@ namespace ReserveWebApp.Controllers
 
         public IActionResult Index()
         {
-            List<ReservesViewModel> result;
             var min = DateTime.Today;
             var max = min.AddDays(7);
-            var db = _repository;
-            result = db.GetReserveList(min, max)
+            var result = _repository.GetReserveList(min, max)
                 .OrderBy(x => x.TimeStart)
                 .Select(x => new ReservesViewModel
                 {
@@ -80,9 +76,8 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(new UserViewModel());
 
-            var db = _repository;
-            db.CreateUser(model.UserName, model.UserSurname);
-            db.Save();
+            _repository.CreateUser(model.UserName, model.UserSurname);
+            _repository.Save();
             return RedirectToAction(nameof(Index));
         }
 
@@ -98,9 +93,8 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(new RoomViewModel());
 
-            var db = _repository;
-            db.CreateRoom(model.RoomName);
-            db.Save();
+            _repository.CreateRoom(model.RoomName);
+            _repository.Save();
 
             return RedirectToAction(nameof(Index));
         }
@@ -118,9 +112,8 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel());
 
-            var db = _repository;
-            db.CreateReserve(model.SelectedUserId, model.SelectedRoomId, model.StartTime, model.EndTime);
-            db.Save();
+            _repository.CreateReserve(model.SelectedUserId, model.SelectedRoomId, model.StartTime, model.EndTime);
+            _repository.Save();
 
             return RedirectToAction(nameof(Index));
         }
@@ -138,15 +131,14 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel(id));
 
-            var db = _repository;
-            var row = db.GetReserve(id);
+            var row = _repository.GetReserve(id);
             if (row != null)
             {
                 row.UserId = model.SelectedUserId;
                 row.RoomId = model.SelectedRoomId;
                 row.TimeStart = model.StartTime;
                 row.TimeEnd = model.EndTime;
-                db.Save();
+                _repository.Save();
             }
 
             return RedirectToAction(nameof(Index));
@@ -154,9 +146,8 @@ namespace ReserveWebApp.Controllers
 
         public IActionResult DeleteReserve(int id)
         {
-            var db = _repository;
-            db.DeleteReserve(id);
-            db.Save();
+            _repository.DeleteReserve(id);
+            _repository.Save();
             return RedirectToAction(nameof(Index));
         }
 
@@ -166,19 +157,24 @@ namespace ReserveWebApp.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        private static ReserveViewModel GetReserveViewModel(int? id = null)
+        private ReserveViewModel GetReserveViewModel(int? id = null)
         {
             var model = new ReserveViewModel();
 
-            var cl = new HomeController(new Repository());
-            var db = cl._repository;
-            var row = id.HasValue ? db.GetReserve(id.Value) : null;
+            var row = id.HasValue ? _repository.GetReserve(id.Value) : null;
 
-            var users = db.GetUserList().Select(x => new { x.Id, Name = $"{x.Surname} {x.Name}" }).OrderBy(x => x.Name).ToList();
+            var users = _repository.GetUserList()
+                .Select(x => new
+                {
+                    x.Id, 
+                    Name = $"{x.Surname} {x.Name}"
+                })
+                .OrderBy(x => x.Name)
+                .ToList();
             model.SelectedUserId = row?.UserId ?? users.Select(x => x.Id).FirstOrDefault();
             model.Users = new SelectList(users, "Id", "Name");
 
-            var rooms = db.GetRoomList().OrderBy(x => x.Name).ToList();
+            var rooms = _repository.GetRoomList().OrderBy(x => x.Name).ToList();
             model.SelectedRoomId = row?.RoomId ?? rooms.Select(x => x.Id).FirstOrDefault();
             model.Rooms = new SelectList(rooms, "Id", "Name");
 

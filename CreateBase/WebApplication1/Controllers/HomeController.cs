@@ -30,6 +30,13 @@ namespace ReserveWebApp.Controllers
         }
 
         [AcceptVerbs("GET", "POST")]
+        public IActionResult VerifyReserve(int SelectedRoomId, DateTime StartTime, DateTime EndTime, int Id)
+        {
+            var result = _repository.IsReserveCorrect(SelectedRoomId, StartTime, EndTime, Id);
+            return Json(result);
+        }
+
+        [AcceptVerbs("GET", "POST")]
         public IActionResult VerifySurname([RegularExpression(@"^[^\-][\p{L}\-]*[^\-]$")] string userSurname)
         {
             return Json(ModelState.IsValid);

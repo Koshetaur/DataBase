@@ -60,7 +60,7 @@ namespace LibBase
         /// <param name="IdRoom">Id Резервируемой комнаты</param>
         /// <param name="TimeSt">Время начала резерва</param>
         /// <param name="TimeEn">Время окончания резерва</param>
-        void CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn);
+        Reserve CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn);
         /// <summary>
         /// Удаляет из базы пользователя
         /// </summary>
@@ -82,6 +82,15 @@ namespace LibBase
         /// <param name="room">Название комнаты</param>
         /// <returns></returns>
         bool IsRoomUnique(string room);
+        /// <summary>
+        /// Проверяет резерв на наличие противоречий по времени
+        /// </summary>
+        /// <param name="roomId">Id комнаты</param>
+        /// <param name="timeStart">Время начала резерва</param>
+        /// <param name="timeEnd">Время окончания резерва</param>
+        /// <param name="id">Id резерва</param>
+        /// <returns></returns>
+        bool IsReserveCorrect(int roomId, DateTime timeStart, DateTime timeEnd, int id);
         /// <summary>
         /// Сохраняет изменения в базе данных
         /// </summary>
@@ -113,7 +122,7 @@ namespace LibBase
 
         public List<Reserve> GetReserveList(DateTime TimeMin, DateTime TimeMax)
         {
-            var res = db.Reservs.Include(res => res.User).Include(res => res.Room).Where(res => res.TimeStart>=TimeMin && res.TimeEnd<=TimeMax).ToList();
+            var res = db.Reservs.Include(res => res.User).Include(res => res.Room).Where(res => res.TimeEnd>=TimeMin && res.TimeStart<=TimeMax).ToList();
             return res;
         }
 
@@ -144,12 +153,13 @@ namespace LibBase
             db.Rooms.Add(room);
         }
 
-        public void CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn)
+        public Reserve CreateReserve(int IdUser, int IdRoom, DateTime TimeSt, DateTime TimeEn)
         {
             User user = GetUser(IdUser);
             Room room = GetRoom(IdRoom);
             Reserve res = new Reserve { User = user, Room = room, TimeStart = TimeSt, TimeEnd = TimeEn };
             db.Reservs.Add(res);
+            return res;
         }
 
         public void DeleteUser(int id)
@@ -173,6 +183,11 @@ namespace LibBase
         public bool IsRoomUnique(string room)
         {
             return !db.Rooms.Any(x => x.Name == room);
+        }
+
+        public bool IsReserveCorrect(int roomId, DateTime timeStart, DateTime timeEnd, int id)
+        {
+            return !db.Reservs.Any(res => res.TimeEnd >= timeStart && res.TimeStart <= timeEnd && res.RoomId == roomId && res.Id!=id);
         }
 
         public void Save()

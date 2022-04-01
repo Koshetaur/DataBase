@@ -166,7 +166,7 @@ namespace LibBase
 
         public void DeleteReserve(int id)
         {
-            Reserve reserve = GetReserve(id);
+            Reserve reserve = db.Reservs.SingleOrDefault(res => res.Id == id);
             db.Reservs.Remove(reserve);
         }
 

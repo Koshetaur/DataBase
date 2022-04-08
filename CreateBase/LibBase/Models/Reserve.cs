@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace LibBase
 {
@@ -19,5 +20,10 @@ namespace LibBase
         public Room Room { get; set; }
         public DateTime TimeStart { get; set; }
         public DateTime TimeEnd { get; set; }
+
+        public static implicit operator Reserve(ValueTask<Reserve> v)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

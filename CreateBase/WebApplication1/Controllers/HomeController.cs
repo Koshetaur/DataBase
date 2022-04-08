@@ -2,10 +2,10 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
-using LibBase;
+using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using ReserveWebApp.Models;
 
 namespace ReserveWebApp.Controllers
@@ -13,26 +13,32 @@ namespace ReserveWebApp.Controllers
     public class HomeController : Controller
     {
 
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
 
-        public HomeController(IUnitOfWork unitOfWork)
+        public HomeController(IMediator mediator)
         {
-            _unitOfWork = unitOfWork;
+            _mediator = mediator;
         }
 
         #region Validators
 
         [AcceptVerbs("GET", "POST")]
-        public IActionResult VerifyRoomName(string roomName)
+        public async Task<IActionResult> VerifyRoomName(string roomName)
         {
-            var result = _unitOfWork.GetRepository<Room>().Query().Any(x => x.Name == roomName);
+            var rooms = await _mediator.Send(new GetRoomListCommand());
+            var result = rooms.Any(x => x.Name == roomName);
             return Json(!result);
         }
 
         [AcceptVerbs("GET", "POST")]
-        public IActionResult VerifyReserve(int SelectedRoomId, DateTime StartTime, DateTime EndTime, int Id)
+        public async Task<IActionResult> VerifyReserve(int SelectedRoomId, DateTime StartTime, DateTime EndTime, int Id)
         {
-            var result = _unitOfWork.GetRepository<Reserve>().Query().Any(res => res.TimeEnd >= StartTime && res.TimeStart <= EndTime && res.RoomId == SelectedRoomId && res.Id != Id);
+            var reserves = await _mediator.Send(new GetReserveListCommand
+            {
+                MinTime = StartTime,
+                MaxTime = EndTime
+            });
+            var result = reserves.Any(res => res.TimeEnd >= StartTime && res.TimeStart <= EndTime && res.Room.Id == SelectedRoomId && res.Id != Id);
             return Json(!result);
         }
 
@@ -51,13 +57,16 @@ namespace ReserveWebApp.Controllers
         #endregion
 
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             var min = DateTime.Today;
             var max = min.AddDays(7);
-            var result = _unitOfWork.GetRepository<Reserve>().Query()
-                .Include(res => res.User).Include(res => res.Room)
-                .Where(res => res.TimeEnd >= min && res.TimeStart <= max).ToList()
+            var reserves = await _mediator.Send(new GetReserveListCommand
+            {
+                MinTime = DateTime.Today,
+                MaxTime = DateTime.Today.AddDays(7)
+            });
+            var result = reserves
                 .OrderBy(res => res.TimeStart)
                 .Select(res => new ReservesViewModel
                 {
@@ -80,16 +89,16 @@ namespace ReserveWebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddUser(UserViewModel model)
+        public async Task<IActionResult> AddUser(UserViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(new UserViewModel());
-            _unitOfWork.GetRepository<User>().Create(new User
+            await _mediator.Send(new AddUserCommand
             {
                 Name = model.UserName,
                 Surname = model.UserSurname
             });
-            _unitOfWork.Save();
+            
             return RedirectToAction(nameof(Index));
         }
 
@@ -100,15 +109,14 @@ namespace ReserveWebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddRoom(RoomViewModel model)
+        public async Task<IActionResult> AddRoom(RoomViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(new RoomViewModel());
-            _unitOfWork.GetRepository<Room>().Create(new Room
+            await _mediator.Send(new AddRoomCommand
             {
                 Name = model.RoomName,
             });
-            _unitOfWork.Save();
 
             return RedirectToAction(nameof(Index));
         }
@@ -121,18 +129,18 @@ namespace ReserveWebApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult AddReserve(ReserveViewModel model)
+        public async Task<IActionResult> AddReserve(ReserveViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel());
-            _unitOfWork.GetRepository<Reserve>().Create(new Reserve
+
+            await _mediator.Send(new AddReserveCommand
             {
-                User = _unitOfWork.GetRepository<User>().Get(model.SelectedUserId),
-                Room = _unitOfWork.GetRepository<Room>().Get(model.SelectedRoomId),
+                UserId = model.SelectedUserId,
+                RoomId = model.SelectedRoomId,
                 TimeStart = model.StartTime,
                 TimeEnd = model.EndTime
-            });
-            _unitOfWork.Save();
+            }); ;
 
             return RedirectToAction(nameof(Index));
         }
@@ -145,28 +153,26 @@ namespace ReserveWebApp.Controllers
 
         [HttpPost("{id}")]
         [ValidateAntiForgeryToken]
-        public IActionResult EditReserve(int id, ReserveViewModel model)
+        public async Task<IActionResult> EditReserve(int id, ReserveViewModel model)
         {
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel(id));
 
-            var row = _unitOfWork.GetRepository<Reserve>().Query().Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == id);
-            if (row != null)
+            await _mediator.Send(new EditReserveCommand
             {
-                row.UserId = model.SelectedUserId;
-                row.RoomId = model.SelectedRoomId;
-                row.TimeStart = model.StartTime;
-                row.TimeEnd = model.EndTime;
-                _unitOfWork.Save();
-            }
+                Id = id,
+                UserId = model.SelectedUserId,
+                RoomId = model.SelectedRoomId,
+                TimeStart = model.StartTime,
+                TimeEnd = model.EndTime,
+            });
 
             return RedirectToAction(nameof(Index));
         }
 
-        public IActionResult DeleteReserve(int id)
+        public async Task<IActionResult> DeleteReserve(int id)
         {
-            _unitOfWork.GetRepository<Reserve>().Delete(id);
-            _unitOfWork.Save();
+            await _mediator.Send(new DeleteReserveCommand { Id = id });
             return RedirectToAction(nameof(Index));
         }
 
@@ -176,13 +182,14 @@ namespace ReserveWebApp.Controllers
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
 
-        private ReserveViewModel GetReserveViewModel(int? id = null)
+        private async Task<ReserveViewModel> GetReserveViewModel(int? id = null)
         {
             var model = new ReserveViewModel();
 
-            var row = id.HasValue ? _unitOfWork.GetRepository<Reserve>().Query().Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == id.Value) : null;
 
-            var userList = _unitOfWork.GetRepository<User>().Query().ToList();
+            var row = id.HasValue ? await _mediator.Send(new GetReserveCommand { Id = id.Value }) : null;
+
+            var userList = await _mediator.Send(new GetUserListCommand());
             var users = userList.Select(x => new
             {
                 x.Id,
@@ -190,11 +197,12 @@ namespace ReserveWebApp.Controllers
             })
             .OrderBy(x => x.Name)
             .ToList();
-            model.SelectedUserId = row?.UserId ?? users.Select(x => x.Id).FirstOrDefault();
+            model.SelectedUserId = row?.User.Id ?? users.Select(x => x.Id).FirstOrDefault();
             model.Users = new SelectList(users, "Id", "Name");
 
-            var rooms = _unitOfWork.GetRepository<Room>().Query().OrderBy(x => x.Name).ToList();
-            model.SelectedRoomId = row?.RoomId ?? rooms.Select(x => x.Id).FirstOrDefault();
+            var roomList = await _mediator.Send(new GetRoomListCommand());
+            var rooms = roomList.OrderBy(x => x.Name).ToList();
+            model.SelectedRoomId = row?.Room.Id ?? rooms.Select(x => x.Id).FirstOrDefault();
             model.Rooms = new SelectList(rooms, "Id", "Name");
 
             var now = DateTime.Now;

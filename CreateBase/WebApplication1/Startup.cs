@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using LibBase;
 using Microsoft.EntityFrameworkCore;
+using MediatR;
+using System.Reflection;
 
 namespace ReserveWebApp
 {
@@ -23,6 +25,7 @@ namespace ReserveWebApp
         {
             services.AddDbContext<ApplicationContext>(opt => opt.UseSqlite(Helper.ConnectionString));
             services.AddScoped<IUnitOfWork, UnitOfWork<ApplicationContext>>();
+            services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddControllersWithViews();
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

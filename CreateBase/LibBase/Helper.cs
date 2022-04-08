@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace LibBase
+﻿namespace LibBase
 {
     public class Helper
     {

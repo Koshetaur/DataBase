@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using LibBase;
+using Microsoft.EntityFrameworkCore;
 
 namespace ReserveWebApp
 {
@@ -20,7 +21,8 @@ namespace ReserveWebApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddScoped<UnitOfWork>();
+            services.AddDbContext<ApplicationContext>(opt => opt.UseSqlite(Helper.ConnectionString));
+            services.AddScoped<IUnitOfWork, UnitOfWork<ApplicationContext>>();
             services.AddControllersWithViews();
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

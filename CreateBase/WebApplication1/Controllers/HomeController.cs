@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Linq;
 using LibBase;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using ReserveWebApp.Models;
 
 namespace ReserveWebApp.Controllers
@@ -13,9 +13,9 @@ namespace ReserveWebApp.Controllers
     public class HomeController : Controller
     {
 
-        private readonly UnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public HomeController(UnitOfWork unitOfWork)
+        public HomeController(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
@@ -25,15 +25,15 @@ namespace ReserveWebApp.Controllers
         [AcceptVerbs("GET", "POST")]
         public IActionResult VerifyRoomName(string roomName)
         {
-            var result = _unitOfWork.IsRoomUnique(roomName);
-            return Json(result);
+            var result = _unitOfWork.GetRepository<Room>().Query().Any(x => x.Name == roomName);
+            return Json(!result);
         }
 
         [AcceptVerbs("GET", "POST")]
         public IActionResult VerifyReserve(int SelectedRoomId, DateTime StartTime, DateTime EndTime, int Id)
         {
-            var result = _unitOfWork.IsReserveCorrect(SelectedRoomId, StartTime, EndTime, Id);
-            return Json(result);
+            var result = _unitOfWork.GetRepository<Reserve>().Query().Any(res => res.TimeEnd >= StartTime && res.TimeStart <= EndTime && res.RoomId == SelectedRoomId && res.Id != Id);
+            return Json(!result);
         }
 
         [AcceptVerbs("GET", "POST")]
@@ -55,16 +55,18 @@ namespace ReserveWebApp.Controllers
         {
             var min = DateTime.Today;
             var max = min.AddDays(7);
-            var result = _unitOfWork.Reserves.GetList(min, max)
-                .OrderBy(x => x.TimeStart)
-                .Select(x => new ReservesViewModel
+            var result = _unitOfWork.GetRepository<Reserve>().Query()
+                .Include(res => res.User).Include(res => res.Room)
+                .Where(res => res.TimeEnd >= min && res.TimeStart <= max).ToList()
+                .OrderBy(res => res.TimeStart)
+                .Select(res => new ReservesViewModel
                 {
-                    Id = x.Id,
+                    Id = res.Id,
                     User =
-                        $"{x.User.Name} {x.User.Surname}",
-                    Room = x.Room.Name,
-                    TimeStart = $"{x.TimeStart}",
-                    TimeEnd = $"{x.TimeEnd}"
+                        $"{res.User.Name} {res.User.Surname}",
+                    Room = res.Room.Name,
+                    TimeStart = $"{res.TimeStart}",
+                    TimeEnd = $"{res.TimeEnd}"
                 })
                 .ToList();
 
@@ -82,7 +84,7 @@ namespace ReserveWebApp.Controllers
         {
             if (!ModelState.IsValid)
                 return View(new UserViewModel());
-            _unitOfWork.Users.Create(new User
+            _unitOfWork.GetRepository<User>().Create(new User
             {
                 Name = model.UserName,
                 Surname = model.UserSurname
@@ -102,7 +104,7 @@ namespace ReserveWebApp.Controllers
         {
             if (!ModelState.IsValid)
                 return View(new RoomViewModel());
-            _unitOfWork.Rooms.Create(new Room
+            _unitOfWork.GetRepository<Room>().Create(new Room
             {
                 Name = model.RoomName,
             });
@@ -123,10 +125,10 @@ namespace ReserveWebApp.Controllers
         {
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel());
-            _unitOfWork.Reserves.Create(new Reserve
+            _unitOfWork.GetRepository<Reserve>().Create(new Reserve
             {
-                User = _unitOfWork.Users.Get(model.SelectedUserId),
-                Room = _unitOfWork.Rooms.Get(model.SelectedRoomId),
+                User = _unitOfWork.GetRepository<User>().Get(model.SelectedUserId),
+                Room = _unitOfWork.GetRepository<Room>().Get(model.SelectedRoomId),
                 TimeStart = model.StartTime,
                 TimeEnd = model.EndTime
             });
@@ -148,7 +150,7 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(GetReserveViewModel(id));
 
-            var row = _unitOfWork.Reserves.Get(id);
+            var row = _unitOfWork.GetRepository<Reserve>().Query().Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == id);
             if (row != null)
             {
                 row.UserId = model.SelectedUserId;
@@ -163,7 +165,7 @@ namespace ReserveWebApp.Controllers
 
         public IActionResult DeleteReserve(int id)
         {
-            _unitOfWork.Reserves.Delete(id);
+            _unitOfWork.GetRepository<Reserve>().Delete(id);
             _unitOfWork.Save();
             return RedirectToAction(nameof(Index));
         }
@@ -178,20 +180,20 @@ namespace ReserveWebApp.Controllers
         {
             var model = new ReserveViewModel();
 
-            var row = id.HasValue ? _unitOfWork.Reserves.Get(id.Value) : null;
+            var row = id.HasValue ? _unitOfWork.GetRepository<Reserve>().Query().Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == id.Value) : null;
 
-            var users = _unitOfWork.Users.GetList()
-                .Select(x => new
-                {
-                    x.Id, 
-                    Name = $"{x.Surname} {x.Name}"
-                })
-                .OrderBy(x => x.Name)
-                .ToList();
+            var userList = _unitOfWork.GetRepository<User>().Query().ToList();
+            var users = userList.Select(x => new
+            {
+                x.Id,
+                Name = $"{x.Surname} {x.Name}"
+            })
+            .OrderBy(x => x.Name)
+            .ToList();
             model.SelectedUserId = row?.UserId ?? users.Select(x => x.Id).FirstOrDefault();
             model.Users = new SelectList(users, "Id", "Name");
 
-            var rooms = _unitOfWork.Rooms.GetList().OrderBy(x => x.Name).ToList();
+            var rooms = _unitOfWork.GetRepository<Room>().Query().OrderBy(x => x.Name).ToList();
             model.SelectedRoomId = row?.RoomId ?? rooms.Select(x => x.Id).FirstOrDefault();
             model.Rooms = new SelectList(rooms, "Id", "Name");
 

@@ -1,26 +1,15 @@
-﻿using System;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace LibBase
 {
-    public class ApplicationDbContextOptions : DbContextOptions<ApplicationContext>
-    {
-        public string ConnectionString { get; set; }
-    }
-
     public class ApplicationContextFactory : IDesignTimeDbContextFactory<ApplicationContext>
     {
         public ApplicationContext CreateDbContext(string[] args)
         {
-            var opt = new ApplicationDbContextOptions
-            {
-                ConnectionString = Helper.ConnectionString
-            };
-
-            //var optionsBuilder = new DbContextOptionsBuilder<ApplicationContext>(opt);
-            return new ApplicationContext(opt);
+            var builder = new DbContextOptionsBuilder<ApplicationContext>();
+            builder.UseSqlite(Helper.ConnectionString);
+            return new ApplicationContext(builder.Options);
         }
     }
 
@@ -30,14 +19,8 @@ namespace LibBase
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Reserve> Reservs { get; set; }
         public string DbPath { get; }
-        public ApplicationContext(ApplicationDbContextOptions opt) : base(opt)
+        public ApplicationContext(DbContextOptions<ApplicationContext> opt) : base(opt)
         {
-        }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            var opt = (ApplicationDbContextOptions)optionsBuilder.Options;
-            optionsBuilder.UseSqlite(opt.ConnectionString);
         }
     }
 }

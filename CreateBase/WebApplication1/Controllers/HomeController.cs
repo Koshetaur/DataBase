@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ReserveWebApp.Models;
+using DomainLayer;
 
 namespace ReserveWebApp.Controllers
 {
@@ -25,7 +26,7 @@ namespace ReserveWebApp.Controllers
         [AcceptVerbs("GET", "POST")]
         public async Task<IActionResult> VerifyRoomName(string roomName)
         {
-            var rooms = await _mediator.Send(new GetRoomListCommand());
+            var rooms = await _mediator.Send(new GetRoomListQuery());
             var result = rooms.Any(x => x.Name == roomName);
             return Json(!result);
         }
@@ -33,7 +34,7 @@ namespace ReserveWebApp.Controllers
         [AcceptVerbs("GET", "POST")]
         public async Task<IActionResult> VerifyReserve(int SelectedRoomId, DateTime StartTime, DateTime EndTime, int Id)
         {
-            var reserves = await _mediator.Send(new GetReserveListCommand
+            var reserves = await _mediator.Send(new GetReserveListQuery
             {
                 MinTime = StartTime,
                 MaxTime = EndTime
@@ -59,9 +60,7 @@ namespace ReserveWebApp.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var min = DateTime.Today;
-            var max = min.AddDays(7);
-            var reserves = await _mediator.Send(new GetReserveListCommand
+            var reserves = await _mediator.Send(new GetReserveListQuery
             {
                 MinTime = DateTime.Today,
                 MaxTime = DateTime.Today.AddDays(7)
@@ -122,9 +121,9 @@ namespace ReserveWebApp.Controllers
         }
 
         [HttpGet]
-        public IActionResult AddReserve()
+        public async Task<IActionResult> AddReserve()
         {
-            return View(GetReserveViewModel());
+            return View(await GetReserveViewModel());
         }
 
         [HttpPost]
@@ -132,7 +131,7 @@ namespace ReserveWebApp.Controllers
         public async Task<IActionResult> AddReserve(ReserveViewModel model)
         {
             if (!ModelState.IsValid)
-                return View(GetReserveViewModel());
+                return View(await GetReserveViewModel());
 
             await _mediator.Send(new AddReserveCommand
             {
@@ -146,9 +145,9 @@ namespace ReserveWebApp.Controllers
         }
 
         [HttpGet("{id}")]
-        public IActionResult EditReserve(int id)
+        public async Task<IActionResult> EditReserve(int id)
         {
-            return View(GetReserveViewModel(id));
+            return View(await GetReserveViewModel(id));
         }
 
         [HttpPost("{id}")]
@@ -156,7 +155,7 @@ namespace ReserveWebApp.Controllers
         public async Task<IActionResult> EditReserve(int id, ReserveViewModel model)
         {
             if (!ModelState.IsValid)
-                return View(GetReserveViewModel(id));
+                return View(await GetReserveViewModel(id));
 
             await _mediator.Send(new EditReserveCommand
             {
@@ -187,9 +186,9 @@ namespace ReserveWebApp.Controllers
             var model = new ReserveViewModel();
 
 
-            var row = id.HasValue ? await _mediator.Send(new GetReserveCommand { Id = id.Value }) : null;
+            var row = id.HasValue ? await _mediator.Send(new GetReserveQuery { Id = id.Value }) : null;
 
-            var userList = await _mediator.Send(new GetUserListCommand());
+            var userList = await _mediator.Send(new GetUserListQuery());
             var users = userList.Select(x => new
             {
                 x.Id,
@@ -200,7 +199,7 @@ namespace ReserveWebApp.Controllers
             model.SelectedUserId = row?.User.Id ?? users.Select(x => x.Id).FirstOrDefault();
             model.Users = new SelectList(users, "Id", "Name");
 
-            var roomList = await _mediator.Send(new GetRoomListCommand());
+            var roomList = await _mediator.Send(new GetRoomListQuery());
             var rooms = roomList.OrderBy(x => x.Name).ToList();
             model.SelectedRoomId = row?.Room.Id ?? rooms.Select(x => x.Id).FirstOrDefault();
             model.Rooms = new SelectList(rooms, "Id", "Name");

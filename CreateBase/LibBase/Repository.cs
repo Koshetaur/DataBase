@@ -33,9 +33,9 @@ namespace LibBase
             return db.Set<T>().Find(id);
         }
 
-        public async Task<ValueTask<T>> GetAsync(int id)
+        public async Task<T> GetAsync(int id)
         {
-            return db.Set<T>().FindAsync(id);
+            return await db.Set<T>().FindAsync(id);
         }
 
         public IQueryable<T> Query()

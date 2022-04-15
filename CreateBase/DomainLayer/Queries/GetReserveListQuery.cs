@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using MediatR;
 
-namespace ReserveWebApp.Controllers
+namespace DomainLayer
 {
-    public class GetReserveListCommand : IRequest<List<ReserveDto>>
+    public class GetReserveListQuery : IRequest<List<ReserveDto>>
     { 
         public DateTime MinTime { get; set; }
         public DateTime MaxTime { get; set; }

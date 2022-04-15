@@ -3,21 +3,18 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LibBase;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace ReserveWebApp.Controllers
+namespace DomainLayer
 {
-    public class GetReserveListCommandHandler : IRequestHandler<GetReserveListCommand, List<ReserveDto>>
+    public class GetReserveListQueryHandler : QueryHandler<GetReserveListQuery, List<ReserveDto>>
     {
-        private readonly IUnitOfWork _unitOfWork;
-        public GetReserveListCommandHandler(IUnitOfWork unitOfWork)
+        public GetReserveListQueryHandler(IUnitOfWork unitOfWork) : base(unitOfWork)
         {
-            _unitOfWork = unitOfWork;
         }
-        public async Task<List<ReserveDto>> Handle(GetReserveListCommand command, CancellationToken cancellationToken)
+        public override Task<List<ReserveDto>> Handle(GetReserveListQuery query, CancellationToken cancellationToken)
         {
-            var reserves = _unitOfWork.GetRepository<Reserve>().Query().Include(res => res.User).Include(res => res.Room).Where(res => res.TimeEnd >= command.MinTime && res.TimeStart <= command.MaxTime).ToList();
+            var reserves = GetQuery<Reserve>().Include(res => res.User).Include(res => res.Room).Where(res => res.TimeEnd >= query.MinTime && res.TimeStart <= query.MaxTime).ToList();
             List<ReserveDto> resultReserves = new List<ReserveDto>();
             foreach (Reserve r in reserves)
             {
@@ -39,7 +36,7 @@ namespace ReserveWebApp.Controllers
                     TimeEnd = r.TimeEnd
                 });
             }
-            return resultReserves;
+            return Task.FromResult(resultReserves);
         }
     }
 }

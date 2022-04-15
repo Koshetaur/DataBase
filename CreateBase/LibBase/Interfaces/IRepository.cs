@@ -16,7 +16,7 @@ namespace LibBase
         /// <param name="id">Id нужного объекта</param>
         /// <returns></returns>
         T Get(int id);
-        Task<ValueTask<T>> GetAsync(int id);
+        Task<T> GetAsync(int id);
         /// <summary>
         /// Добавляет нового пользователя в базу данных
         /// </summary>

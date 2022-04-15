@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ReserveWebApp.Controllers
+namespace DomainLayer
 {
     public class ReserveDto
     {

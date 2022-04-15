@@ -1,6 +1,6 @@
 ﻿using MediatR;
 
-namespace ReserveWebApp.Controllers
+namespace DomainLayer
 {
     public class DeleteReserveCommand : IRequest
     {

@@ -3,14 +3,12 @@ using System.Threading.Tasks;
 using LibBase;
 using MediatR;
 
-namespace ReserveWebApp.Controllers
+namespace DomainLayer
 {
-    public class AddUserCommandHandler : AsyncRequestHandler<AddUserCommand>
+    public class AddUserCommandHandler : CommandHandler<AddUserCommand>
     {
-        private readonly IUnitOfWork _unitOfWork;
-        public AddUserCommandHandler(IUnitOfWork unitOfWork)
+        public AddUserCommandHandler(IUnitOfWork unitOfWork) : base(unitOfWork)
         {
-            _unitOfWork = unitOfWork;
         }
         protected override async Task Handle(AddUserCommand command, CancellationToken cancellationToken)
         {
@@ -19,8 +17,8 @@ namespace ReserveWebApp.Controllers
                 Name = command.Name,
                 Surname = command.Surname
             };
-            await _unitOfWork.GetRepository<User>().CreateAsync(user);
-            await _unitOfWork.SaveAsync();
+            await GetRepository<User>().CreateAsync(user);
+            await SaveAsync();
         }
     }
 }

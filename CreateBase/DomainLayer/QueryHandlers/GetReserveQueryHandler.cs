@@ -1,22 +1,22 @@
-﻿using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using LibBase;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace ReserveWebApp.Controllers
+namespace DomainLayer
 {
-    public class GetReserveCommandHandler : IRequestHandler<GetReserveCommand, ReserveDto>
+    public class GetReserveQueryHandler : QueryHandler<GetReserveQuery, ReserveDto>
     {
-        private readonly IUnitOfWork _unitOfWork;
-        public GetReserveCommandHandler(IUnitOfWork unitOfWork)
+        public GetReserveQueryHandler(IUnitOfWork unitOfWork) : base(unitOfWork)
         {
-            _unitOfWork = unitOfWork;
         }
-        public async Task<ReserveDto> Handle(GetReserveCommand command, CancellationToken cancellationToken)
+        public override async Task<ReserveDto> Handle(GetReserveQuery query, CancellationToken cancellationToken)
         {
-            Reserve reserve = _unitOfWork.GetRepository<Reserve>().Query().Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == command.Id);
+            Reserve reserve = await GetQuery<Reserve>().Include(res => res.User).Include(res => res.Room).SingleOrDefaultAsync(res => res.Id == query.Id, cancellationToken);
+            if (reserve == null)
+            {
+                return null;
+            }
             ReserveDto resultReserve = new ReserveDto
             {
                 Id = reserve.Id,

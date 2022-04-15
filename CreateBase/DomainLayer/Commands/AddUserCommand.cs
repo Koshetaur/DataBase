@@ -1,8 +1,9 @@
-﻿namespace ReserveWebApp.Controllers
+﻿using MediatR;
+
+namespace DomainLayer
 {
-    public class UserDto
+    public class AddUserCommand: IRequest
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         public string Surname { get; set; }
     }

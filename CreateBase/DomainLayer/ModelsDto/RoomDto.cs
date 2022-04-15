@@ -1,4 +1,4 @@
-﻿namespace ReserveWebApp.Controllers
+﻿namespace DomainLayer
 {
     public class RoomDto
     {

@@ -6,7 +6,7 @@ namespace LibBase
     public interface IRepository<T> where T : class
     {
         /// <summary>
-        /// Возвращает список всех объектов заданного типа в базе данных в формате List
+        /// Возвращает запрос
         /// </summary>
         /// <returns></returns>
         IQueryable<T> Query();

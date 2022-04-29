@@ -10,10 +10,7 @@
 
   <ItemGroup>
     <Folder Include="ModelsDto\" />
-    <Folder Include="Commands\" />
     <Folder Include="Handlers\" />
-    <Folder Include="Queries\" />
-    <Folder Include="QueryHandlers\" />
   </ItemGroup>
 
 </Project>

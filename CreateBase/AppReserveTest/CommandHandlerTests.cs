@@ -4,9 +4,7 @@ using LibBase;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -73,15 +71,19 @@ namespace AppReserveTest
                 Name = "qwerty"
             };
             var command = new AddRoomCommand { Name = room.Name };
+            var command_nonUnique = new AddRoomCommand { Name = room.Name };
             var handler = new AddRoomHandlerInternal(_unitOfWork);
 
             //Act
             await handler.HandleInternal(command);
+            await handler.HandleInternal(command_nonUnique);
 
             //Assert
+            var testrooms = _context.Rooms.ToList();
             var testroom = _context.Rooms.FirstOrDefault(x => x.Id != _room.Id);
             testroom.Should().NotBeNull();
             testroom.Name.Should().Be(room.Name);
+            testrooms.Count.Should().Be(2);
 
         }
         
@@ -141,15 +143,19 @@ namespace AppReserveTest
                 TimeEnd = max.AddDays(1)
             };
             var command = new AddReserveCommand { UserId = reserve.User.Id, RoomId = reserve.Room.Id, TimeStart = reserve.TimeStart, TimeEnd = reserve.TimeEnd };
+            var command_nonUnique = new AddReserveCommand { UserId = reserve.User.Id, RoomId = reserve.Room.Id, TimeStart = reserve.TimeStart, TimeEnd = reserve.TimeEnd };
             var handler = new AddReserveHandlerInternal(_unitOfWork);
 
             //Act
             await handler.HandleInternal(command);
+            await handler.HandleInternal(command_nonUnique);
 
             //Assert
+            var testreserves = _context.Reservs.ToList();
             var testreserve = _context.Reservs.FirstOrDefault(x => x.Id != _reserve.Id);
             testreserve.Should().NotBeNull();
             testreserve.User.Name.Should().Be(_user.Name);
+            testreserves.Count.Should().Be(2);
 
         }
    

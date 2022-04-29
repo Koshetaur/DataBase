@@ -9,19 +9,32 @@ namespace DomainLayer
 {
     public class EditReserveCommandHandler : CommandHandler<EditReserveCommand>
     {
+        private IUnitOfWork _unitOfWorkLocal;
         public EditReserveCommandHandler(IUnitOfWork unitOfWork) : base(unitOfWork)
         {
+            _unitOfWorkLocal = unitOfWork;
         }
         protected override async Task Handle(EditReserveCommand command, CancellationToken cancellationToken)
         {
-            Reserve reserve = GetRepository<Reserve>().Query().Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == command.Id);
-            reserve.UserId = command.UserId;
-            reserve.User = GetRepository<User>().Get(command.UserId);
-            reserve.RoomId = command.RoomId;
-            reserve.Room = GetRepository<Room>().Get(command.RoomId);
-            reserve.TimeStart = command.TimeStart;
-            reserve.TimeEnd = command.TimeEnd;
-            await SaveAsync();
+            var query = new VerifyReserveQuery
+            {
+                Id = command.Id,
+                RoomId = command.RoomId,
+                TimeStart = command.TimeStart,
+                TimeEnd = command.TimeEnd
+            };
+            var result = await QueryHandle(x => new VerifyReserveQueryHandler(x), query, cancellationToken);
+            if (result)
+            {
+                Reserve reserve = GetRepository<Reserve>().Query().Include(res => res.User).Include(res => res.Room).SingleOrDefault(res => res.Id == command.Id);
+                reserve.UserId = command.UserId;
+                reserve.User = GetRepository<User>().Get(command.UserId);
+                reserve.RoomId = command.RoomId;
+                reserve.Room = GetRepository<Room>().Get(command.RoomId);
+                reserve.TimeStart = command.TimeStart;
+                reserve.TimeEnd = command.TimeEnd;
+                await SaveAsync();
+            }
         }
     }
 }

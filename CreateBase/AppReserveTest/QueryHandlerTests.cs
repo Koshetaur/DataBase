@@ -144,5 +144,42 @@ namespace AppReserveTest
             testreserves.Count.Should().Be(1);
             testreserves_null.Count.Should().Be(0);
         }
+
+        [Test]
+        public async Task QueryHandler_VerifyReserveQueryHandler_Ok()
+        {
+            //Arrange
+            var query_add = new VerifyReserveQuery { Id = 0, RoomId = _reserve.RoomId, TimeStart = min.AddMinutes(10), TimeEnd = max.AddMinutes(10) };
+            var query_edit = new VerifyReserveQuery { Id = _reserve.Id, RoomId = _reserve.RoomId, TimeStart = min.AddMinutes(10), TimeEnd = max.AddMinutes(10) };
+            var query_unique = new VerifyReserveQuery { Id = 0, RoomId = _reserve.RoomId, TimeStart = min.AddHours(3), TimeEnd = max.AddHours(3) };
+            var handler = new VerifyReserveQueryHandler(_unitOfWork);
+
+            //Act
+            bool result_false = await handler.Handle(query_add, CancellationToken.None);
+            bool result_true_edit = await handler.Handle(query_edit, CancellationToken.None);
+            bool result_true_unique = await handler.Handle(query_unique, CancellationToken.None);
+
+            //Assert
+            result_false.Should().Be(false);
+            result_true_edit.Should().Be(true);
+            result_true_unique.Should().Be(true);
+        }
+
+        [Test]
+        public async Task QueryHandler_VerifyRoomQueryHandler_Ok()
+        {
+            //Arrange
+            var query_nonUnique = new VerifyRoomQuery { RoomName = _room.Name };
+            var query_unique = new VerifyRoomQuery { RoomName = "new_room" };
+            var handler = new VerifyRoomQueryHandler(_unitOfWork);
+
+            //Act
+            bool result_false = await handler.Handle(query_nonUnique, CancellationToken.None);
+            bool result_true = await handler.Handle(query_unique, CancellationToken.None);
+
+            //Assert
+            result_false.Should().Be(false);
+            result_true.Should().Be(true);
+        }
     }
 }

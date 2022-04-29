@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using LibBase;
 using MediatR;
@@ -18,7 +19,14 @@ namespace DomainLayer
             return _unitOfWork.GetRepository<T>();
         }
 
+        protected Task<TResp> QueryHandle<TReq, TResp>(Func<IUnitOfWork, QueryHandler<TReq, TResp>> action, TReq query, CancellationToken token)
+            where TReq : IRequest<TResp>
+        {
+            return action(_unitOfWork).Handle(query, token);
+        }
+
         protected async Task SaveAsync()
+
         {
             await _unitOfWork.SaveAsync();
         }

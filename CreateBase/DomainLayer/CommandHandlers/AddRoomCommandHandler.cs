@@ -7,17 +7,27 @@ namespace DomainLayer
 {
     public class AddRoomCommandHandler : CommandHandler<AddRoomCommand>
     {
+        private IUnitOfWork _unitOfWorkLocal;
         public AddRoomCommandHandler(IUnitOfWork unitOfWork) : base(unitOfWork)
         {
+            _unitOfWorkLocal = unitOfWork;
         }
         protected override async Task Handle(AddRoomCommand command, CancellationToken cancellationToken)
         {
-            Room room = new Room
+            var query = new VerifyRoomQuery
             {
-                Name = command.Name,
+                RoomName = command.Name
             };
-            await GetRepository<Room>().CreateAsync(room);
-            await SaveAsync();
+            var result = await QueryHandle(x => new VerifyRoomQueryHandler(x), query, cancellationToken);
+            if (result)
+            {
+                Room room = new Room
+                {
+                    Name = command.Name,
+                };
+                await GetRepository<Room>().CreateAsync(room);
+                await SaveAsync();
+            }
         }
     }
 }

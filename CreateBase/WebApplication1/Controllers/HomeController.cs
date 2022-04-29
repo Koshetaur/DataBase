@@ -26,21 +26,24 @@ namespace ReserveWebApp.Controllers
         [AcceptVerbs("GET", "POST")]
         public async Task<IActionResult> VerifyRoomName(string roomName)
         {
-            var rooms = await _mediator.Send(new GetRoomListQuery());
-            var result = rooms.Any(x => x.Name == roomName);
-            return Json(!result);
+            var result = await _mediator.Send(new VerifyRoomQuery
+            {
+                RoomName = roomName
+            });
+            return Json(result);
         }
 
         [AcceptVerbs("GET", "POST")]
         public async Task<IActionResult> VerifyReserve(int SelectedRoomId, DateTime StartTime, DateTime EndTime, int Id)
         {
-            var reserves = await _mediator.Send(new GetReserveListQuery
+            var result = await _mediator.Send(new VerifyReserveQuery
             {
-                MinTime = StartTime,
-                MaxTime = EndTime
+                Id = Id,
+                RoomId = SelectedRoomId,
+                TimeStart = StartTime,
+                TimeEnd = EndTime
             });
-            var result = reserves.Any(res => res.TimeEnd >= StartTime && res.TimeStart <= EndTime && res.Room.Id == SelectedRoomId && res.Id != Id);
-            return Json(!result);
+            return Json(result);
         }
 
         [AcceptVerbs("GET", "POST")]

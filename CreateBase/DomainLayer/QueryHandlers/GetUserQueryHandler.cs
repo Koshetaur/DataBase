@@ -12,12 +12,7 @@ namespace DomainLayer
         public override async Task<UserDto> Handle(GetUserQuery query, CancellationToken cancellationToken)
         {
             User user = await GetAsync<User>(query.Id);
-            UserDto resultUser = new UserDto
-            {
-                Id = user.Id,
-                Name = user.Name,
-                Surname = user.Surname
-            };
+            UserDto resultUser = _mapper.Map<UserDto>(user);
             return resultUser;
         }
     }

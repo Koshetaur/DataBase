@@ -15,25 +15,15 @@ namespace DomainLayer
 
         protected override async Task Handle(AddReserveCommand command, CancellationToken cancellationToken)
         {
-            var query = new VerifyReserveQuery { 
-                Id = 0,
-                RoomId = command.RoomId,
-                TimeStart = command.TimeStart,
-                TimeEnd = command.TimeEnd};
+            var query = _mapper.Map<VerifyReserveQuery>(command);
 
             var result = await QueryHandle(x => new VerifyReserveQueryHandler(x), query, cancellationToken);
 
             if (result)
             {
-                Reserve reserve = new Reserve
-                {
-                    UserId = command.UserId,
-                    User = GetRepository<User>().Get(command.UserId),
-                    RoomId = command.RoomId,
-                    Room = GetRepository<Room>().Get(command.RoomId),
-                    TimeStart = command.TimeStart,
-                    TimeEnd = command.TimeEnd
-                };
+                Reserve reserve = _mapper.Map<Reserve>(command);
+                reserve.User = _mapper.Map<User>(GetRepository<User>().Get(command.UserId));
+                reserve.Room = _mapper.Map<Room>(GetRepository<Room>().Get(command.RoomId));
                 await GetRepository<Reserve>().CreateAsync(reserve);
                 await SaveAsync();
             }

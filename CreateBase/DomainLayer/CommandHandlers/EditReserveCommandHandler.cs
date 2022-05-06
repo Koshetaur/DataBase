@@ -16,13 +16,7 @@ namespace DomainLayer
         }
         protected override async Task Handle(EditReserveCommand command, CancellationToken cancellationToken)
         {
-            var query = new VerifyReserveQuery
-            {
-                Id = command.Id,
-                RoomId = command.RoomId,
-                TimeStart = command.TimeStart,
-                TimeEnd = command.TimeEnd
-            };
+            var query = _mapper.Map<VerifyReserveQuery>(command);
             var result = await QueryHandle(x => new VerifyReserveQueryHandler(x), query, cancellationToken);
             if (result)
             {

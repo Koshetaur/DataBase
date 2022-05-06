@@ -12,11 +12,7 @@ namespace DomainLayer
         public override async Task<RoomDto> Handle(GetRoomQuery query, CancellationToken cancellationToken)
         {
             Room room = await GetAsync<Room>(query.Id);
-            RoomDto resultRoom = new RoomDto
-            {
-                Id = room.Id,
-                Name = room.Name,
-            };
+            RoomDto resultRoom = _mapper.Map<RoomDto>(room);
             return resultRoom;
         }
     }

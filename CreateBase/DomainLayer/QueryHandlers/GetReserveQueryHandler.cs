@@ -17,22 +17,7 @@ namespace DomainLayer
             {
                 return null;
             }
-            ReserveDto resultReserve = new ReserveDto
-            {
-                Id = reserve.Id,
-                User = new UserDto {
-                    Id = reserve.User.Id,
-                    Name = reserve.User.Name,
-                    Surname = reserve.User.Surname
-                },
-                Room = new RoomDto
-                {
-                    Id = reserve.Room.Id,
-                    Name = reserve.Room.Name
-                },
-                TimeStart = reserve.TimeStart,
-                TimeEnd = reserve.TimeEnd
-            };
+            ReserveDto resultReserve = _mapper.Map<ReserveDto>(reserve);
             return resultReserve;
         }
     }

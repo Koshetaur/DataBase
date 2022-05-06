@@ -12,11 +12,7 @@ namespace DomainLayer
         }
         protected override async Task Handle(AddUserCommand command, CancellationToken cancellationToken)
         {
-            User user = new User
-            {
-                Name = command.Name,
-                Surname = command.Surname
-            };
+            User user = _mapper.Map<User>(command);
             await GetRepository<User>().CreateAsync(user);
             await SaveAsync();
         }

@@ -15,27 +15,7 @@ namespace DomainLayer
         public override Task<List<ReserveDto>> Handle(GetReserveListQuery query, CancellationToken cancellationToken)
         {
             var reserves = GetQuery<Reserve>().Include(res => res.User).Include(res => res.Room).Where(res => res.TimeEnd >= query.MinTime && res.TimeStart <= query.MaxTime).ToList();
-            List<ReserveDto> resultReserves = new List<ReserveDto>();
-            foreach (Reserve r in reserves)
-            {
-                resultReserves.Add(new ReserveDto
-                {
-                    Id = r.Id,
-                    User = new UserDto
-                    {
-                        Id = r.User.Id,
-                        Name = r.User.Name,
-                        Surname = r.User.Surname
-                    },
-                    Room = new RoomDto
-                    {
-                        Id = r.Room.Id,
-                        Name = r.Room.Name
-                    },
-                    TimeStart = r.TimeStart,
-                    TimeEnd = r.TimeEnd
-                });
-            }
+            List<ReserveDto> resultReserves = _mapper.Map<List<ReserveDto>>(reserves.ToList());
             return Task.FromResult(resultReserves);
         }
     }

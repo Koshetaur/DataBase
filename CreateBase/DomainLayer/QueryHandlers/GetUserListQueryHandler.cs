@@ -14,16 +14,7 @@ namespace DomainLayer
         public override Task<List<UserDto>> Handle(GetUserListQuery query, CancellationToken cancellationToken)
         {
             var users = GetQuery<User>().ToList();
-            List<UserDto> resultUsers = new List<UserDto>();
-            foreach (User u in users)
-            {
-                resultUsers.Add(new UserDto
-                {
-                    Id = u.Id,
-                    Name = u.Name,
-                    Surname = u.Surname
-                });
-            }
+            List<UserDto> resultUsers = _mapper.Map<List<UserDto>>(users.ToList());
             return Task.FromResult(resultUsers);
         }
     }

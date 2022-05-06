@@ -14,15 +14,7 @@ namespace DomainLayer
         public override Task<List<RoomDto>> Handle(GetRoomListQuery query, CancellationToken cancellationToken)
         {
             var rooms = GetQuery<Room>().ToList();
-            List<RoomDto> resultRooms = new List<RoomDto>();
-            foreach (Room r in rooms)
-            {
-                resultRooms.Add(new RoomDto
-                {
-                    Id = r.Id,
-                    Name = r.Name,
-                });
-            }
+            List<RoomDto> resultRooms = _mapper.Map<List<RoomDto>>(rooms.ToList());
             return Task.FromResult(resultRooms);
         }
     }

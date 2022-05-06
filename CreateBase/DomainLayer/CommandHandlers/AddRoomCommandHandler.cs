@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using LibBase;
-using MediatR;
 
 namespace DomainLayer
 {
@@ -14,17 +13,11 @@ namespace DomainLayer
         }
         protected override async Task Handle(AddRoomCommand command, CancellationToken cancellationToken)
         {
-            var query = new VerifyRoomQuery
-            {
-                RoomName = command.Name
-            };
+            var query = _mapper.Map<VerifyRoomQuery>(command);
             var result = await QueryHandle(x => new VerifyRoomQueryHandler(x), query, cancellationToken);
             if (result)
             {
-                Room room = new Room
-                {
-                    Name = command.Name,
-                };
+                Room room = _mapper.Map<Room>(command);
                 await GetRepository<Room>().CreateAsync(room);
                 await SaveAsync();
             }

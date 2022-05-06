@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using ReserveWebApp.Models;
 using DomainLayer;
+using AutoMapper;
+using System.Collections.Generic;
 
 namespace ReserveWebApp.Controllers
 {
@@ -15,10 +17,34 @@ namespace ReserveWebApp.Controllers
     {
 
         private readonly IMediator _mediator;
+        private readonly IMapper _mapper;
 
         public HomeController(IMediator mediator)
         {
             _mediator = mediator;
+            _mapper = new MapperConfiguration(x =>
+            {
+                x.CreateMap<ReserveDto, ReservesViewModel>()
+                .ForMember(dst => dst.User, opt => opt.MapFrom(src => $"{src.User.Name} {src.User.Surname}"))
+                .ForMember(dst => dst.Room, opt => opt.MapFrom(src => src.Room.Name))
+                .ForMember(dst => dst.TimeStart, opt => opt.MapFrom(src => $"{src.TimeStart}"))
+                .ForMember(dst => dst.TimeEnd, opt => opt.MapFrom(src => $"{src.TimeEnd}"));
+                x.CreateMap<UserViewModel, AddUserCommand>()
+                .ForMember(dst => dst.Name, opt => opt.MapFrom(src => src.UserName))
+                .ForMember(dst => dst.Surname, opt => opt.MapFrom(src => src.UserSurname));
+                x.CreateMap<RoomViewModel, AddRoomCommand>()
+                .ForMember(dst => dst.Name, opt => opt.MapFrom(src => src.RoomName));
+                x.CreateMap<ReserveViewModel, AddReserveCommand>()
+                .ForMember(dst => dst.UserId, opt => opt.MapFrom(src => src.SelectedUserId))
+                .ForMember(dst => dst.RoomId, opt => opt.MapFrom(src => src.SelectedRoomId))
+                .ForMember(dst => dst.TimeStart, opt => opt.MapFrom(src => src.StartTime))
+                .ForMember(dst => dst.TimeEnd, opt => opt.MapFrom(src => src.EndTime));
+                x.CreateMap<ReserveViewModel, EditReserveCommand>()
+                .ForMember(dst => dst.UserId, opt => opt.MapFrom(src => src.SelectedUserId))
+                .ForMember(dst => dst.RoomId, opt => opt.MapFrom(src => src.SelectedRoomId))
+                .ForMember(dst => dst.TimeStart, opt => opt.MapFrom(src => src.StartTime))
+                .ForMember(dst => dst.TimeEnd, opt => opt.MapFrom(src => src.EndTime));
+            }).CreateMapper();
         }
 
         #region Validators
@@ -68,18 +94,7 @@ namespace ReserveWebApp.Controllers
                 MinTime = DateTime.Today,
                 MaxTime = DateTime.Today.AddDays(7)
             });
-            var result = reserves
-                .OrderBy(res => res.TimeStart)
-                .Select(res => new ReservesViewModel
-                {
-                    Id = res.Id,
-                    User =
-                        $"{res.User.Name} {res.User.Surname}",
-                    Room = res.Room.Name,
-                    TimeStart = $"{res.TimeStart}",
-                    TimeEnd = $"{res.TimeEnd}"
-                })
-                .ToList();
+            var result = _mapper.Map<List<ReservesViewModel>>(reserves.OrderBy(res => res.TimeStart).ToList());
 
             return View(result);
         }
@@ -95,11 +110,7 @@ namespace ReserveWebApp.Controllers
         {
             if (!ModelState.IsValid)
                 return View(new UserViewModel());
-            await _mediator.Send(new AddUserCommand
-            {
-                Name = model.UserName,
-                Surname = model.UserSurname
-            });
+            await _mediator.Send(_mapper.Map<AddUserCommand>(model));
             
             return RedirectToAction(nameof(Index));
         }
@@ -115,10 +126,7 @@ namespace ReserveWebApp.Controllers
         {
             if (!ModelState.IsValid)
                 return View(new RoomViewModel());
-            await _mediator.Send(new AddRoomCommand
-            {
-                Name = model.RoomName,
-            });
+            await _mediator.Send(_mapper.Map<AddRoomCommand>(model));
 
             return RedirectToAction(nameof(Index));
         }
@@ -136,13 +144,8 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(await GetReserveViewModel());
 
-            await _mediator.Send(new AddReserveCommand
-            {
-                UserId = model.SelectedUserId,
-                RoomId = model.SelectedRoomId,
-                TimeStart = model.StartTime,
-                TimeEnd = model.EndTime
-            }); ;
+            
+            await _mediator.Send(_mapper.Map<AddReserveCommand>(model));
 
             return RedirectToAction(nameof(Index));
         }
@@ -160,14 +163,7 @@ namespace ReserveWebApp.Controllers
             if (!ModelState.IsValid)
                 return View(await GetReserveViewModel(id));
 
-            await _mediator.Send(new EditReserveCommand
-            {
-                Id = id,
-                UserId = model.SelectedUserId,
-                RoomId = model.SelectedRoomId,
-                TimeStart = model.StartTime,
-                TimeEnd = model.EndTime,
-            });
+            await _mediator.Send(_mapper.Map<EditReserveCommand>(model));
 
             return RedirectToAction(nameof(Index));
         }

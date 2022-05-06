@@ -19,7 +19,8 @@ namespace DomainLayer
                 x.CreateMap<EditReserveCommand, VerifyReserveQuery>();
                 x.CreateMap<AddReserveCommand, VerifyReserveQuery>();
                 x.CreateMap<AddReserveCommand, Reserve>();
-                x.CreateMap<AddRoomCommand, VerifyRoomQuery>();
+                x.CreateMap<AddRoomCommand, VerifyRoomQuery>()
+                .ForMember(dst => dst.RoomName, opt => opt.MapFrom(src => src.Name));
                 x.CreateMap<AddUserCommand, User>();
                 x.CreateMap<AddRoomCommand, Room>();
                 x.CreateMap<UserDto, User>();

@@ -1,41 +1,121 @@
-﻿<!DOCTYPE html>
+﻿
+<div id="scheduler_here" class="dhx_cal_container" style='width:100%; height:100vh;'>
+    <div class="dhx_cal_navline">
+        <div class="dhx_cal_prev_button">&nbsp;</div>
+        <div class="dhx_cal_next_button">&nbsp;</div>
+        <div class="dhx_cal_today_button"></div>
+        <div class="dhx_cal_date"></div>
+        <div class="dhx_cal_tab" name="day_tab"></div>
+        <div class="dhx_cal_tab" name="week_tab"></div>
+        <div class="dhx_cal_tab" name="month_tab"></div>
+    </div>
+    <div class="dhx_cal_header"></div>
+    <div class="dhx_cal_data"></div>
+</div>
 
-<html>
-<head>
-    <meta name="viewport" content="width=device-width" />
-    <title>Index</title>
-    <link href="https://cdn.dhtmlx.com/scheduler/edge/dhtmlxscheduler_material.css"
-          rel="stylesheet" type="text/css" />
-    <script src="https://cdn.dhtmlx.com/scheduler/edge/dhtmlxscheduler.js"></script>
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
     <script>
-        document.addEventListener("DOMContentLoaded", function(event) {
-            // initializing scheduler
-            scheduler.init("scheduler_here", new Date());
+        //scheduler.config.multi_day = true;
+        scheduler.config.full_day = true;
+        scheduler.config.xml_date = "%Y-%m-%d %H:%i";
+        scheduler.config.show_loading = true;
+        scheduler.config.details_on_dblclick = true;
+        scheduler.config.details_on_create = true;
+        scheduler.config.icons_select = [
+            "icon_details",
+            "icon_delete"
+        ];
 
-            // initiating data loading
-            scheduler.load("/api/scheduler");
-            // initializing dataProcessor
-            var dp = new dataProcessor("/api/scheduler");
-            // and attaching it to scheduler
-            dp.init(scheduler);
-            // setting the REST mode for dataProcessor
-            dp.setTransactionMode("REST");
+        scheduler.templates.event_text = function (start, end, event) {
+            return "оф. " + event.room + ", " + event.holder + ", " + event.text;
+        };
+
+        scheduler.config.lightbox.sections = [
+            { name: "Тема", height: 200, map_to: "text", type: "textarea", focus: true },
+            {
+                name: "Офис",
+                height: 26,
+                inputWidth: 200,
+                map_to: "room",
+                type: "select",
+                default_value: "8 этаж",
+                options: scheduler.serverList("rooms")
+            },
+            { name: "Организатор", height: 26, map_to: "holder", type: "textarea", default_value: "<организатор>" },
+            { name: "time", height: 72, type: "time", map_to: "auto" }
+        ];
+
+        var format = scheduler.date.date_to_str("%d.%m.%Y %H:%i");
+        scheduler.templates.tooltip_text = function (start, end, event) {
+            return "<b>" + event.text + "</b><br/>" +
+                format(start) + " - " + format(end)+
+                "<br/><b>Кто:</b> " + event.holder +
+                "<br/><b>Где:</b> " + event.room + "<br/>";
+        };
+
+        scheduler.config.first_hour = 8;
+        scheduler.config.last_hour = 21;
+        scheduler.config.limit_time_select = true;
+        scheduler.ignore_week = function (date) {
+            if (date.getDay() === 0 || date.getDay() === 6)
+                return true;
+        };
+
+        scheduler.init('scheduler_here', Date.now(), "week");
+        scheduler.setLoadMode("week");
+        scheduler.load("/api/Event", "json");
+        var dp = new dataProcessor("/api/Event");
+        dp.init(scheduler);
+        dp.setTransactionMode("JSON", false);
+
+        scheduler.attachEvent("onLoadStart", function () {
+            scheduler.config.readonly = true;
+        });
+
+        scheduler.attachEvent("onLoadEnd", function () {
+            scheduler.config.readonly = false;
+        });
+
+        scheduler.attachEvent("onBeforeEventChanged", function (ev, e, isnew, original) {
+            if (isnew)
+                ev.id = ev.id.toString();
+            return true;
+        });
+
+        scheduler.attachEvent("onEventSave", function (id, ev) {
+            if (!ev.text) {
+                dhtmlx.alert("Необходимо указать тему.");
+                return false;
+            }
+
+            if (!ev.holder) {
+                dhtmlx.alert("Необходимо указать организатора.");
+                return false;
+            }
+
+            if (!ev.room) {
+                dhtmlx.alert("Необходимо указать конференц-зал.");
+                return false;
+            }
+
+            return true;
+        });
+
+        dp.attachEvent("onAfterUpdate", function (id, action, tid, response) {
+            if (action === "error" || action === "intersected" || action === "inpast") {
+                if (action === "intersected") {
+                    var e = scheduler.getEvent(id);
+                    dhtmlx.alert("Это время уже занято в офисе '" + e.room + "'.");
+                }
+                if (action === "inpast") {
+                    dhtmlx.alert("Нельзя перенести событие в прошлое.");
+                }
+                scheduler.clearAll();
+                scheduler.load("/api/Event");
+            }
+            if (action === 'updated')
+                scheduler.getEvent(id).readonly = false;
         });
     </script>
-</head>
-<body>
-    <div id="scheduler_here" class="dhx_cal_container" style='width:100%; height:100vh;'>
-        <div class="dhx_cal_navline">
-            <div class="dhx_cal_prev_button">&nbsp;</div>
-            <div class="dhx_cal_next_button">&nbsp;</div>
-            <div class="dhx_cal_today_button"></div>
-            <div class="dhx_cal_date"></div>
-            <div class="dhx_cal_tab" name="day_tab"></div>
-            <div class="dhx_cal_tab" name="week_tab"></div>
-            <div class="dhx_cal_tab" name="month_tab"></div>
-        </div>
-        <div class="dhx_cal_header"></div>
-        <div class="dhx_cal_data"></div>
-    </div>
-</body>
-</html>
+}

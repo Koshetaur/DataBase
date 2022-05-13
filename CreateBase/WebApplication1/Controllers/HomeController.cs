@@ -86,7 +86,6 @@ namespace ReserveWebApp.Controllers
 
         #endregion
 
-
         public async Task<IActionResult> Index()
         {
             var reserves = await _mediator.Send(new GetReserveListQuery

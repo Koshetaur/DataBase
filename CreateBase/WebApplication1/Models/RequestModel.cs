@@ -13,4 +13,11 @@ namespace ReserveWebApp.Models
         public string Action { get; set; }
         public EventModel Data { get; set; }
     }
+
+    public class RequestApiModel
+    {
+        public string Id { get; set; }
+        public string Action { get; set; }
+        public EventModel Data { get; set; }
+    }
 }

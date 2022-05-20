@@ -23,20 +23,14 @@ namespace ReserveWebApp.Controllers
             _mediator = mediator;
             _mapper = new MapperConfiguration(x =>
             {
-                x.CreateMap<ReserveDto, EventModel>()
-                .ForMember(dst => dst.start_date, opt => opt.MapFrom(src => src.TimeStart))
-                .ForMember(dst => dst.end_date, opt => opt.MapFrom(src => src.TimeEnd))
-                .ForMember(dst => dst.holder, opt => opt.MapFrom(src => $"{src.User.Name} {src.User.Surname}"))
-                .ForMember(dst => dst.Room, opt => opt.MapFrom(src => src.Room.Name))
-                .ForMember(dst => dst.Text, opt => opt.MapFrom(src => $"ROOM RESERVED"));
-                x.CreateMap<RoomDto, Pair>()
-                .ForMember(dst => dst.Value, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dst => dst.Label, opt => opt.MapFrom(src => src.Name));
-                x.CreateMap<EventModel, AddReserveCommand>()
-                .ForMember(dst => dst.TimeStart, opt => opt.MapFrom(src => src.start_date))
-                .ForMember(dst => dst.TimeEnd, opt => opt.MapFrom(src => src.end_date));
+                x.CreateMap<ReserveDto, DayPilotEventModel>()
+                .ForMember(dst => dst.Start, opt => opt.MapFrom(src => src.TimeStart))
+                .ForMember(dst => dst.End, opt => opt.MapFrom(src => src.TimeEnd))
+                .ForMember(dst => dst.Text, opt => opt.MapFrom(src => $"{src.User.Name} {src.User.Surname} reserved {src.Room.Name}"))
+                .ForMember(dst => dst.BarColor, opt => opt.MapFrom(src => $"#6aa84f"));
             }).CreateMapper();
         }
+
 
         public async Task<bool> VerifyReserve(int SelectedRoomId, DateTime StartTime, DateTime EndTime, int Id)
         {
@@ -51,27 +45,21 @@ namespace ReserveWebApp.Controllers
         }
 
         [HttpGet]
-        public async Task<EventListModel> Get(DateTime from, DateTime to)
+        public async Task<DayPilotEventListModel> Event(/*DateTime from, DateTime to*/)
         {
             var reserves = await _mediator.Send(new GetReserveListQuery
             {
-                MinTime = from,
-                MaxTime = to
+                MinTime = DateTime.Today,
+                MaxTime = DateTime.Today.AddDays(7)
             });
-            var events = _mapper.Map<List<EventModel>>(reserves);
-            var rooms = await _mediator.Send(new GetRoomListQuery());
-            var roomsPair = _mapper.Map<List<Pair>>(rooms);
-            return new EventListModel
+            var events = _mapper.Map<List<DayPilotEventModel>>(reserves);
+            return new DayPilotEventListModel
             {
-                Data = events,
-                Collections = new Collections
-                {
-                    Rooms = roomsPair
-                }
+                DPEvents = events
             };
         }
 
-        [HttpGet("{id}")]
+        /*[HttpGet("{id}")]
         public async Task<EventModel> Get(int id)
         {
             var reserve = await _mediator.Send(new GetReserveQuery { Id = id });
@@ -80,7 +68,7 @@ namespace ReserveWebApp.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Post(RequestModel model)
+        public async Task<IActionResult> Post(RequestApiModel model)
         {
             switch (model.Action)
             {
@@ -101,6 +89,6 @@ namespace ReserveWebApp.Controllers
                     }
             }
             return Ok(new { tid = model.Data.Id, action = "" });
-        }
+        }*/
     }
 }
